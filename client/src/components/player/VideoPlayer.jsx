@@ -224,48 +224,23 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title }) {
   // ── IFRAME PLAYER (vidsrc, streamtape, dood, etc.) ────────────────────────
   if (isEmbed) {
 
-    // Block popups and redirects from inside the iframe
+    // Block ad popups from iframe — only blocks new windows opened automatically
     useEffect(() => {
       if (!isEmbed) return;
-
-      // Override window.open to block all popups
       const originalOpen = window.open;
-      window.open = () => null;
-
-      // Block any new tab / navigation attempts triggered by iframe clicks
-      const blockNavigation = (e) => {
-        // If the target is a new tab link coming from outside our app, block it
-        if (e.target && e.target.tagName === 'A' && e.target.target === '_blank') {
-          const href = e.target.href || '';
-          // Allow only if it's from our own domain
-          if (!href.includes(window.location.hostname)) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        }
+      // Only block window.open calls that happen without user gesture (ad popups)
+      // Allow user-initiated ones (like source switcher)
+      let userClick = false;
+      const trackClick = () => { userClick = true; setTimeout(() => { userClick = false; }, 500); };
+      document.addEventListener('click', trackClick, true);
+      window.open = (...args) => {
+        // Block if no recent user click (automatic popup from ad)
+        if (!userClick) return null;
+        return originalOpen.apply(window, args);
       };
-      document.addEventListener('click', blockNavigation, true);
-
-      // Detect if page is about to be navigated away (iframe redirect attempt)
-      const blockUnload = (e) => {
-        e.preventDefault();
-        e.returnValue = '';
-      };
-
-      // Re-focus iframe container if window loses focus (popup attempt)
-      const handleBlur = () => {
-        setTimeout(() => {
-          // Close any popup that may have opened
-          if (document.activeElement?.tagName !== 'IFRAME') return;
-          window.focus();
-        }, 100);
-      };
-      window.addEventListener('blur', handleBlur);
-
       return () => {
         window.open = originalOpen;
-        document.removeEventListener('click', blockNavigation, true);
-        window.removeEventListener('blur', handleBlur);
+        document.removeEventListener('click', trackClick, true);
       };
     }, [isEmbed]);
 
