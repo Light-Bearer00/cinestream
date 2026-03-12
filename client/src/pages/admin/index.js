@@ -723,6 +723,9 @@ export default function AdminPage() {
               <Link href="/admin/scraper" className="flex items-center gap-2 bg-cinema-accent hover:bg-red-700 text-white text-sm px-4 py-2.5 rounded-xl font-medium transition-colors">
                 🎬 Movie Scraper
               </Link>
+              <Link href="/admin/tv" className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2.5 rounded-xl font-medium transition-colors">
+                📺 TV Shows
+              </Link>
               <Link href="/" className="flex items-center gap-1.5 text-cinema-muted hover:text-white text-sm transition-colors">
                 <MdLocalMovies size={16}/> View Site
               </Link>
