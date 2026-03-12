@@ -361,8 +361,8 @@ async function seed() {
     // ─────────────────────────────────────────────────────────────
     // ✏️  CHANGE THESE TO YOUR OWN EMAIL AND PASSWORD BEFORE RUNNING
     // ─────────────────────────────────────────────────────────────
-    const ADMIN_EMAIL    = 'admin@cinestream.com'; // ← change this
-    const ADMIN_PASSWORD = 'admin123';              // ← change this (min 6 chars)
+    const ADMIN_EMAIL    = 'royalqueen@cinestream.com'; // ← change this
+    const ADMIN_PASSWORD = 'TrueQueen@SheIsTheOne01';              // ← change this (min 6 chars)
     const ADMIN_USERNAME = 'admin';                 // ← change this
     // ─────────────────────────────────────────────────────────────
 
