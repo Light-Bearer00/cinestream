@@ -54,7 +54,7 @@ export default function Navbar() {
               className="text-2xl font-display tracking-widest text-white"
               style={{ fontFamily: 'Bebas Neue, serif', letterSpacing: '0.15em' }}
             >
-              CINESTREAM
+              ROYALQUEEN
             </span>
           </Link>
 

@@ -35,7 +35,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <Head><title>Sign In — CineStream</title></Head>
+      <Head><title>Sign In — RoyalQueen</title></Head>
 
       <div className="min-h-screen bg-cinema-black flex items-center justify-center px-4">
         {/* Background glow effect */}
@@ -53,7 +53,7 @@ export default function LoginPage() {
                 className="text-3xl text-white"
                 style={{ fontFamily: 'Bebas Neue, serif', letterSpacing: '0.2em' }}
               >
-                CINESTREAM
+                ROYALQUEEN
               </span>
             </div>
             <p className="text-cinema-muted text-sm mt-2">Private streaming — members only</p>

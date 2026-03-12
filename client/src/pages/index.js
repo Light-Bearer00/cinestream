@@ -55,7 +55,7 @@ export default function HomePage() {
   return (
     <>
       <Head>
-        <title>CineStream — Watch Classic Films</title>
+        <title>RoyalQueen — Watch Classic Films</title>
         <meta name="description" content="Stream public-domain classic films for free." />
       </Head>
 
