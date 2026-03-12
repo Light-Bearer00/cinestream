@@ -274,25 +274,7 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title }) {
 
         {!iframeError ? (
           <>
-            {/* 
-              Transparent click-interceptor overlay — sits on top of iframe edges
-              to catch any accidental clicks on ad banners around the player.
-              The center is left open so the actual video controls work.
-            */}
-            <div className="absolute inset-0 z-10 pointer-events-none">
-              {/* Top edge blocker */}
-              <div className="absolute top-0 left-0 right-0 h-8 pointer-events-auto"
-                onClick={e => e.preventDefault()}/>
-              {/* Bottom edge blocker */}
-              <div className="absolute bottom-0 left-0 right-0 h-8 pointer-events-auto"
-                onClick={e => e.preventDefault()}/>
-              {/* Left edge blocker */}
-              <div className="absolute top-8 bottom-8 left-0 w-4 pointer-events-auto"
-                onClick={e => e.preventDefault()}/>
-              {/* Right edge blocker */}
-              <div className="absolute top-8 bottom-8 right-0 w-4 pointer-events-auto"
-                onClick={e => e.preventDefault()}/>
-            </div>
+
 
             <iframe
               key={activeUrl}
