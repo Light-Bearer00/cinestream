@@ -300,10 +300,10 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title }) {
               className="w-full h-full border-0"
               allowFullScreen
               allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-              referrerPolicy="no-referrer"
+              referrerPolicy="origin"
               scrolling="no"
               title={title}
-              sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups-to-escape-sandbox"
+              
               onError={() => setIframeError(true)}
             />
 
