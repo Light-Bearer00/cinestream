@@ -63,7 +63,10 @@ export default function Navbar() {
             <Link href="/" className="text-sm text-cinema-muted hover:text-white transition-colors">
               Home
             </Link>
-            {GENRES.slice(0, 5).map((genre) => (
+            <Link href="/tv" className="text-sm text-cinema-muted hover:text-white transition-colors flex items-center gap-1">
+              📺 TV Shows
+            </Link>
+            {GENRES.slice(0, 4).map((genre) => (
               <Link
                 key={genre}
                 href={`/genre/${genre.toLowerCase()}`}
