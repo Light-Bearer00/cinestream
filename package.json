@@ -1,0 +1,14 @@
+{
+  "name": "cinestream",
+  "version": "1.0.0",
+  "description": "Full-stack movie streaming platform — university project",
+  "private": true,
+  "scripts": {
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "seed": "cd server && npm run seed",
+    "start:server": "cd server && npm start",
+    "start:client": "cd client && npm start"
+  }
+}

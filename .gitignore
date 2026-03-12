@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.local
+.next/
+dist/
+build/
+uploads/posters/
+*.log
+.DS_Store
