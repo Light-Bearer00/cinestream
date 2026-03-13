@@ -77,7 +77,7 @@ function HeroCarousel({ movies }) {
     timerRef.current = setInterval(() => {
       setCurrent(c => (c + 1) % movies.length);
       setShowTrailer(false);
-    }, 8000);
+    }, 20000);
   };
 
   // Fetch trailer for current movie
