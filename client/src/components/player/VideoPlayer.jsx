@@ -224,91 +224,23 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title }) {
   // ── IFRAME PLAYER (vidsrc, streamtape, dood, etc.) ────────────────────────
   if (isEmbed) {
 
-    // ── COMPREHENSIVE AD & REDIRECT BLOCKER ─────────────────────────────────
+    // Block ad popups from iframe — only blocks new windows opened automatically
     useEffect(() => {
       if (!isEmbed) return;
-
-      // Known streaming domains — everything else is blocked
-      const ALLOWED_DOMAINS = [
-        'autoembed.co', 'vidsrc.xyz', 'vidsrc.me', 'vidsrc.net',
-        'embed.su', 'moviesapi.club', '2embed.cc', '2embed.org',
-        'embedrise.com', 'filemoon.sx', 'streamtape.com',
-        'doodstream.com', 'dood.la', 'dood.ws', 'mixdrop.co',
-        'mp4upload.com', 'upcloud.', 'smashystream.com',
-        'multiembed.mov', 'autoembed.to', window.location.hostname,
-      ];
-
-      const isAllowed = (url = '') => {
-        try {
-          const host = new URL(url).hostname;
-          return ALLOWED_DOMAINS.some(d => host.includes(d));
-        } catch { return false; }
-      };
-
-      // 1. Block ALL window.open — no popups ever
       const originalOpen = window.open;
-      window.open = () => null;
-
-      // 2. Block location changes (redirects away from our site)
-      const originalAssign   = window.location.assign.bind(window.location);
-      const originalReplace  = window.location.replace.bind(window.location);
-      try {
-        Object.defineProperty(window, 'location', {
-          configurable: true,
-          get: () => new Proxy(window.location, {
-            set(target, prop, value) {
-              if (prop === 'href') return true; // block redirect
-              target[prop] = value;
-              return true;
-            }
-          })
-        });
-      } catch(e) {}
-
-      // 3. Intercept any <a> clicks trying to go to ad sites
-      const blockAdClicks = (e) => {
-        const el = e.target.closest('a');
-        if (!el) return;
-        const href = el.href || '';
-        if (href && !isAllowed(href) && !href.startsWith(window.location.origin)) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-        }
+      // Only block window.open calls that happen without user gesture (ad popups)
+      // Allow user-initiated ones (like source switcher)
+      let userClick = false;
+      const trackClick = () => { userClick = true; setTimeout(() => { userClick = false; }, 500); };
+      document.addEventListener('click', trackClick, true);
+      window.open = (...args) => {
+        // Block if no recent user click (automatic popup from ad)
+        if (!userClick) return null;
+        return originalOpen.apply(window, args);
       };
-      document.addEventListener('click', blockAdClicks, true);
-
-      // 4. Block blur (tab switching from popup)
-      const handleBlur = () => {
-        setTimeout(() => window.focus(), 50);
-      };
-      window.addEventListener('blur', handleBlur);
-
-      // 5. MutationObserver — remove any injected ad iframes/scripts
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach(m => {
-          m.addedNodes.forEach(node => {
-            if (node.nodeType !== 1) return;
-            const tag = node.tagName?.toLowerCase();
-            // Remove injected iframes that aren't our player
-            if (tag === 'iframe') {
-              const src = node.src || '';
-              if (src && !isAllowed(src)) node.remove();
-            }
-            // Remove injected scripts from ad networks
-            if (tag === 'script') {
-              const src = node.src || '';
-              if (src && !isAllowed(src)) node.remove();
-            }
-          });
-        });
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-
       return () => {
         window.open = originalOpen;
-        window.removeEventListener('blur', handleBlur);
-        document.removeEventListener('click', blockAdClicks, true);
-        observer.disconnect();
+        document.removeEventListener('click', trackClick, true);
       };
     }, [isEmbed]);
 
@@ -329,7 +261,7 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title }) {
               referrerPolicy="origin"
               scrolling="no"
               title={title}
-              
+              sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups-to-escape-sandbox allow-fullscreen"
               onError={() => setIframeError(true)}
             />
 
