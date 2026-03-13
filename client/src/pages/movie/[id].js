@@ -16,6 +16,7 @@ import VideoPlayer from '../../components/player/VideoPlayer';
 import MovieCard from '../../components/cards/MovieCard';
 import { FiStar, FiClock, FiCalendar, FiHeart, FiPlay, FiGlobe, FiServer } from 'react-icons/fi';
 import AdBlockBanner from '../../components/ui/AdBlockBanner';
+import { saveMovieProgress, getMovieProgress } from '../../utils/watchProgress';
 
 export default function MoviePage() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function MoviePage() {
   const [showPlayer, setShowPlayer] = useState(false);
   const [isFav,      setIsFav]      = useState(false);
   const [imgError,   setImgError]   = useState(false);
+  const [resumeTime,  setResumeTime]  = useState(0);
 
   useEffect(() => {
     if (!id) return;
@@ -42,6 +44,13 @@ export default function MoviePage() {
         ]);
         setMovie(movieRes.data);
         setRelated(relatedRes.data);
+        // Load saved progress for resume
+        const saved = getMovieProgress(id);
+        if (saved && saved.percent >= 2 && saved.percent < 95) {
+          setResumeTime(saved.currentTime);
+        } else {
+          setResumeTime(0);
+        }
       } catch (err) {
         console.error('Failed to load movie:', err);
       } finally {
@@ -79,6 +88,18 @@ export default function MoviePage() {
     }
     return [];
   }
+
+  // Called by VideoPlayer every 5 seconds
+  const handleProgress = (currentTime, duration) => {
+    if (!movie || !currentTime) return;
+    const realDuration = duration > 0 ? duration
+      : movie.duration > 0 ? movie.duration * 60
+      : 7200;
+    saveMovieProgress(movie._id, currentTime, realDuration, {
+      title:  movie.title,
+      poster: movie.poster,
+    });
+  };
 
   if (loading) {
     return (
@@ -226,6 +247,22 @@ export default function MoviePage() {
               </button>
             </div>
 
+            {/* Resume banner */}
+            {!showPlayer && resumeTime > 0 && (
+              <div className="flex items-center gap-3 bg-cinema-card border border-cinema-accent/30 rounded-xl px-4 py-3">
+                <FiPlay size={16} className="text-cinema-accent shrink-0" />
+                <p className="text-cinema-text text-sm flex-1">
+                  You watched <span className="text-white font-semibold">{Math.floor(resumeTime / 60)}m</span> — resume where you left off?
+                </p>
+                <button
+                  onClick={() => setShowPlayer(true)}
+                  className="text-cinema-accent text-sm font-semibold hover:underline shrink-0"
+                >
+                  Resume
+                </button>
+              </div>
+            )}
+
             {/* Video Player */}
             {showPlayer && streamSources.length > 0 && (
               <div className="mt-4 animate-slide-up">
@@ -237,6 +274,8 @@ export default function MoviePage() {
                   streamUrl={primaryUrl}
                   streamSources={streamSources}
                   title={movie.title}
+                  onProgress={handleProgress}
+                  startTime={resumeTime}
                 />
                 <div className="mt-3 flex flex-wrap gap-2">
                   {streamSources.map((s, i) => (
