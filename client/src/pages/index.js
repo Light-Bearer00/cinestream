@@ -14,7 +14,7 @@ import MovieRow from '../components/cards/MovieRow';
 import TVShowRow from '../components/cards/TVShowRow';
 import Top10Row from '../components/cards/Top10Row';
 import ContinueWatchingRow from '../components/cards/ContinueWatchingRow';
-import { FiPlay, FiInfo, FiStar, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiPlay, FiInfo, FiStar, FiChevronLeft, FiChevronRight, FiVolume2, FiVolumeX } from 'react-icons/fi';
 
 const GENRE_ROWS = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Documentary'];
 
@@ -229,16 +229,18 @@ function HeroCarousel({ movies }) {
               >
                 <FiInfo size={16} /> More Info
               </Link>
-              {/* Mute/unmute button — only show when trailer is playing */}
-              {showTrailer && (
-                <button
-                  onClick={() => setMuted(m => !m)}
-                  className="flex items-center gap-2 bg-black/40 border border-white/30 text-white px-4 py-3 rounded-xl text-sm hover:bg-black/60 transition-colors"
-                  title={muted ? 'Unmute' : 'Mute'}
-                >
-                  {muted ? '🔇' : '🔊'}
-                </button>
-              )}
+              {/* Mute button — always takes up space, invisible when no trailer to prevent layout shift */}
+              <button
+                onClick={() => setMuted(m => !m)}
+                className={`flex items-center justify-center w-11 h-11 rounded-full border transition-all duration-200 ${
+                  showTrailer
+                    ? 'bg-black/40 border-white/40 text-white hover:bg-black/60 hover:border-white opacity-100'
+                    : 'opacity-0 pointer-events-none border-transparent'
+                }`}
+                aria-label={muted ? 'Unmute' : 'Mute'}
+              >
+                {muted ? <FiVolumeX size={18} /> : <FiVolume2 size={18} />}
+              </button>
             </div>
           </div>
         </div>
