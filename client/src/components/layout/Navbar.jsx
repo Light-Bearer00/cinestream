@@ -63,8 +63,8 @@ export default function Navbar() {
             <Link href="/" className="text-sm text-cinema-muted hover:text-white transition-colors">
               Home
             </Link>
-            <Link href="/tv" className="text-sm text-cinema-muted hover:text-white transition-colors flex items-center gap-1">
-              📺 TV Shows
+            <Link href="/tv" className="text-sm text-cinema-muted hover:text-white transition-colors">
+              TV Shows
             </Link>
             {GENRES.slice(0, 4).map((genre) => (
               <Link
@@ -173,7 +173,7 @@ export default function Navbar() {
               onClick={() => setMenuOpen(false)}
               className="block px-2 py-2 text-sm text-cinema-muted hover:text-white transition-colors"
             >
-              📺 TV Shows
+              TV Shows
             </Link>
             {GENRES.map((genre) => (
               <Link
