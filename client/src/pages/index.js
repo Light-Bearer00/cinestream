@@ -210,11 +210,9 @@ function HeroCarousel({ movies }) {
               {movie.duration > 0 && <span>{movie.duration} min</span>}
             </div>
 
-            {!showTrailer && (
-              <p className="text-white/70 text-sm leading-relaxed mb-6 line-clamp-3">
-                {movie.description}
-              </p>
-            )}
+            <p className="text-white/70 text-sm leading-relaxed mb-6 line-clamp-3">
+              {movie.description}
+            </p>
 
             <div className="flex items-center gap-3 flex-wrap">
               <button
