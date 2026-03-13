@@ -297,13 +297,6 @@ export default function TVShowPage() {
                       streamSources={playingEp.sources}
                       title={`${show.title} ${playingEp.title}`}
                     />
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {playingEp.sources.map((s, i) => (
-                        <span key={i} className="text-xs bg-cinema-dark border border-cinema-border text-cinema-muted px-3 py-1 rounded-full">
-                          {s.label} · {s.provider}
-                        </span>
-                      ))}
-                    </div>
                     <p className="text-cinema-muted text-xs mt-2">
                       💡 If one server doesn't work, try another. Space = play/pause · F = fullscreen
                     </p>
