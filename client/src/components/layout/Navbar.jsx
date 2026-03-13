@@ -168,6 +168,13 @@ export default function Navbar() {
         {/* Mobile dropdown */}
         {menuOpen && (
           <div className="md:hidden border-t border-cinema-border py-3 animate-slide-up">
+            <Link
+              href="/tv"
+              onClick={() => setMenuOpen(false)}
+              className="block px-2 py-2 text-sm text-cinema-muted hover:text-white transition-colors"
+            >
+              📺 TV Shows
+            </Link>
             {GENRES.map((genre) => (
               <Link
                 key={genre}
