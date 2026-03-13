@@ -1,23 +1,44 @@
 /**
  * ContinueWatchingRow
  * Shows recently watched movies/episodes with a progress bar
- * and "X minutes remaining" label.
+ * and correct "X minutes remaining" label.
  */
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FiPlay, FiX, FiChevronRight } from 'react-icons/fi';
-import { getContinueWatching, removeFromContinueWatching, formatTimeRemaining } from '../../utils/watchProgress';
+import { FiPlay, FiX, FiClock } from 'react-icons/fi';
+import { getContinueWatching, removeFromContinueWatching } from '../../utils/watchProgress';
+
+function formatRemaining(currentTime, duration) {
+  if (!duration || !currentTime || duration <= 0) return null;
+  const remaining = Math.max(0, duration - currentTime);
+  const mins = Math.floor(remaining / 60);
+  if (mins <= 0) return 'Almost done';
+  if (mins >= 60) {
+    const hrs = Math.floor(mins / 60);
+    const m   = mins % 60;
+    return m > 0 ? `${hrs}h ${m}m left` : `${hrs}h left`;
+  }
+  return `${mins}m left`;
+}
 
 function ContinueCard({ item, onRemove }) {
   const href = item.type === 'movie'
     ? `/movie/${item.id}`
     : `/tv/${item.id}?resume=s${item.season}e${item.episode}`;
 
-  const subtitle = item.type === 'movie'
-    ? formatTimeRemaining(item.currentTime, item.duration)
-    : `S${item.season} E${item.episode} · ${formatTimeRemaining(item.currentTime, item.duration)}`;
+  const displayTitle = item.type === 'tv_last'
+    ? (item.showTitle || item.title)
+    : item.title;
+
+  const episodeLabel = item.type === 'tv_last'
+    ? `S${item.season} E${item.episode}`
+    : null;
+
+  // Calculate remaining time properly
+  const remaining = formatRemaining(item.currentTime, item.duration);
+  const percent   = Math.min(Math.max(item.percent || 0), 99);
 
   return (
     <div className="relative w-44 md:w-52 shrink-0 group">
@@ -26,7 +47,7 @@ function ContinueCard({ item, onRemove }) {
           {item.poster ? (
             <Image
               src={item.poster}
-              alt={item.title}
+              alt={displayTitle}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="208px"
@@ -36,20 +57,27 @@ function ContinueCard({ item, onRemove }) {
             <div className="w-full h-full flex items-center justify-center text-cinema-muted text-4xl">🎬</div>
           )}
 
-          {/* Dark overlay on hover */}
+          {/* Hover overlay */}
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
             <div className="w-12 h-12 bg-cinema-accent rounded-full flex items-center justify-center shadow-lg">
               <FiPlay size={20} className="text-white ml-1" />
             </div>
           </div>
 
-          {/* Progress bar at bottom of poster */}
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+          {/* Progress bar */}
+          <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/20">
             <div
               className="h-full bg-cinema-accent transition-all"
-              style={{ width: `${Math.min(item.percent, 100)}%` }}
+              style={{ width: `${percent}%` }}
             />
           </div>
+
+          {/* Episode badge for TV */}
+          {episodeLabel && (
+            <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-0.5 rounded font-medium">
+              {episodeLabel}
+            </div>
+          )}
         </div>
       </Link>
 
@@ -57,17 +85,22 @@ function ContinueCard({ item, onRemove }) {
       <button
         onClick={(e) => { e.preventDefault(); onRemove(item.id); }}
         className="absolute top-2 right-2 w-6 h-6 bg-black/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-cinema-accent z-10"
-        title="Remove from continue watching"
+        title="Remove"
       >
         <FiX size={12} className="text-white" />
       </button>
 
       {/* Info */}
       <div className="mt-2 px-0.5">
-        <p className="text-cinema-text text-sm font-medium truncate">
-          {item.type === 'tv_last' ? (item.showTitle || item.title) : item.title}
-        </p>
-        <p className="text-cinema-accent text-xs mt-0.5">{subtitle}</p>
+        <p className="text-cinema-text text-sm font-medium truncate">{displayTitle}</p>
+        {remaining ? (
+          <div className="flex items-center gap-1 mt-0.5">
+            <FiClock size={10} className="text-cinema-accent shrink-0" />
+            <p className="text-cinema-accent text-xs">{remaining}</p>
+          </div>
+        ) : (
+          <p className="text-cinema-muted text-xs mt-0.5">{percent}% watched</p>
+        )}
       </div>
     </div>
   );
