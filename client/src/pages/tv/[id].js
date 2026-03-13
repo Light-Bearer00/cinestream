@@ -87,18 +87,26 @@ export default function TVShowPage() {
   };
 
   // Save progress callback
-  const handleProgress = useCallback((currentTime, duration) => {
+  // episodeRuntime is in minutes — convert to seconds for accurate progress
+  const handleProgress = useCallback((currentTime, durationFromPlayer) => {
     if (!show || !playingEp) return;
+    // Try to get episode runtime from season data
+    const ep = seasonData?.episodes?.find(
+      e => e.episodeNumber === playingEp.episode
+    );
+    const realDuration = ep?.runtime > 0
+      ? ep.runtime * 60
+      : durationFromPlayer || 2700; // default 45 min for TV episodes
     saveEpisodeProgress(
       id, playingEp.season, playingEp.episode,
-      currentTime, duration,
+      currentTime, realDuration,
       {
         title:     playingEp.title,
         poster:    show.poster,
         showTitle: show.title,
       }
     );
-  }, [id, show, playingEp]);
+  }, [id, show, playingEp, seasonData]);
 
   if (loading) {
     return (

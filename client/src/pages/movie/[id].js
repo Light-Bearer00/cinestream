@@ -63,9 +63,14 @@ export default function MoviePage() {
   }, [user, id, showPlayer]);
 
   // Save progress callback — called every 5s by VideoPlayer
-  const handleProgress = useCallback((currentTime, duration) => {
+  // For iframes, duration from VideoPlayer is 7200 (default).
+  // Override with real movie duration if available (movie.duration is in minutes).
+  const handleProgress = useCallback((currentTime, durationFromPlayer) => {
     if (!movie) return;
-    saveMovieProgress(id, currentTime, duration, {
+    const realDuration = movie.duration > 0
+      ? movie.duration * 60          // convert minutes → seconds
+      : durationFromPlayer || 7200;  // fallback to player estimate
+    saveMovieProgress(id, currentTime, realDuration, {
       title:  movie.title,
       poster: movie.poster,
     });

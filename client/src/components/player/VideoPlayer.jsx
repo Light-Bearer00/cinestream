@@ -244,6 +244,28 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
       };
     }, [isEmbed]);
 
+    // ── TIMER-BASED PROGRESS FOR IFRAMES ─────────────────────────────────────
+    // Since iframes block access to currentTime, we estimate progress using
+    // elapsed wall-clock time from when the user started watching.
+    useEffect(() => {
+      if (!isEmbed || !onProgress) return;
+
+      // Start tracking time from when iframe loads
+      const startTime = Date.now();
+      let elapsed = 0;
+
+      const interval = setInterval(() => {
+        elapsed = (Date.now() - startTime) / 1000; // seconds elapsed
+        // We don't know real duration for embeds, but we can estimate:
+        // Report elapsed as currentTime, use a large default duration (2 hours)
+        // The movie/tv page will use this to show "X min watched" progress
+        const estimatedDuration = 7200; // 2 hours default
+        onProgress(elapsed, estimatedDuration);
+      }, 5000); // save every 5 seconds
+
+      return () => clearInterval(interval);
+    }, [isEmbed, onProgress, activeUrl]);
+
     return (
       <>
       <div ref={containerRef} className="relative w-full aspect-video rounded-xl overflow-hidden bg-black group">
