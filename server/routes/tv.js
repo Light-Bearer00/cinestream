@@ -7,7 +7,6 @@ const TVShow  = require('../models/TVShow');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
-router.use(protect);
 
 // GET /api/tv — list shows with filters
 router.get('/', async (req, res) => {
