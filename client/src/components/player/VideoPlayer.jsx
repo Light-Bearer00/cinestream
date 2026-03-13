@@ -251,15 +251,15 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
       if (!isEmbed || !onProgress) return;
 
       // Start tracking time from when iframe loads
-      const startTime = Date.now();
-      let elapsed = 0;
+      // Note: iframeStartedAt avoids shadowing the startTime prop
+      const iframeStartedAt = Date.now();
+      // Start elapsed from startTime prop so resume works for embeds too
+      let elapsed = startTime > 0 ? startTime : 0;
 
       const interval = setInterval(() => {
-        elapsed = (Date.now() - startTime) / 1000; // seconds elapsed
-        // We don't know real duration for embeds, but we can estimate:
-        // Report elapsed as currentTime, use a large default duration (2 hours)
-        // The movie/tv page will use this to show "X min watched" progress
-        const estimatedDuration = 7200; // 2 hours default
+        elapsed = (startTime > 0 ? startTime : 0) + (Date.now() - iframeStartedAt) / 1000;
+        // estimatedDuration will be overridden by the real duration passed from the page
+        const estimatedDuration = 7200; // fallback only
         onProgress(elapsed, estimatedDuration);
       }, 5000); // save every 5 seconds
 
