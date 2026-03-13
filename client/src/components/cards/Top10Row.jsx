@@ -4,7 +4,7 @@
  * Right: poster with rank number overlay
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { FiPlay, FiInfo, FiChevronLeft, FiChevronRight, FiStar } from 'react-icons/fi';
@@ -16,8 +16,22 @@ export default function Top10Row({ movies = [] }) {
 
   if (!list.length) return null;
 
-  const prev = () => setCurrent(i => (i - 1 + list.length) % list.length);
-  const next = () => setCurrent(i => (i + 1) % list.length);
+  const timerRef = useRef(null);
+
+  const resetTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setCurrent(i => (i + 1) % list.length);
+    }, 6000);
+  };
+
+  useEffect(() => {
+    resetTimer();
+    return () => clearInterval(timerRef.current);
+  }, [list.length]);
+
+  const prev = () => { setCurrent(i => (i - 1 + list.length) % list.length); resetTimer(); };
+  const next = () => { setCurrent(i => (i + 1) % list.length); resetTimer(); };
 
   const movie = list[current];
   const rank  = current + 1;
@@ -135,7 +149,7 @@ export default function Top10Row({ movies = [] }) {
               {list.map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => setCurrent(i)}
+                  onClick={() => { setCurrent(i); resetTimer(); }}
                   className={`rounded-full transition-all duration-300 ${
                     i === current
                       ? 'w-6 h-2 bg-white'
