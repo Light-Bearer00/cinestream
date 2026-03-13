@@ -73,6 +73,7 @@ export const tvApi = {
   getById:    (id)          => api.get(`/tv/${id}`),
   getSeason:  (id, season)  => api.get(`/tv/${id}/season/${season}`),
   getEpisode: (id, s, e)    => api.get(`/tv/${id}/season/${s}/episode/${e}`),
+  getGenres:  ()                => api.get('/tv/genres'),
 };
 
 // ─── TV Scraper API ───────────────────────────────────────────────────────────
