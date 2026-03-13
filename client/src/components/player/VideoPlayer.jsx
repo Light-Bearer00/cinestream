@@ -224,52 +224,28 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title }) {
   // ── IFRAME PLAYER (vidsrc, streamtape, dood, etc.) ────────────────────────
   if (isEmbed) {
 
-    // Block ad popups and banned redirect URLs
+    // Block ad popups from iframe — only blocks new windows opened automatically
     useEffect(() => {
       if (!isEmbed) return;
       const originalOpen = window.open;
-
-      // Permanently banned ad domains
-      const BANNED = [
-        '1xlite', 'chatmate.tv', 'adcash', 'voluum',
-        'registration?tag=', 'utm_source=voluum',
-        'popunder', 'popcash', 'propellerads', 'exoclick',
-        'trafficjunky', 'juicyads', 'hilltopads',
-      ];
-
-      const isBanned = (url = '') => BANNED.some(b => url.includes(b));
-
+      // Only block window.open calls that happen without user gesture (ad popups)
+      // Allow user-initiated ones (like source switcher)
       let userClick = false;
       const trackClick = () => { userClick = true; setTimeout(() => { userClick = false; }, 500); };
       document.addEventListener('click', trackClick, true);
-
       window.open = (...args) => {
-        const url = args[0] || '';
-        // Always block banned URLs
-        if (isBanned(url)) return null;
-        // Block automatic popups (no user click)
+        // Block if no recent user click (automatic popup from ad)
         if (!userClick) return null;
         return originalOpen.apply(window, args);
       };
-
-      // Block navigation to banned URLs
-      const blockBanned = (e) => {
-        const el = e.target.closest('a');
-        if (el && isBanned(el.href || '')) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      };
-      document.addEventListener('click', blockBanned, true);
-
       return () => {
         window.open = originalOpen;
         document.removeEventListener('click', trackClick, true);
-        document.removeEventListener('click', blockBanned, true);
       };
     }, [isEmbed]);
 
     return (
+      <>
       <div ref={containerRef} className="relative w-full aspect-video rounded-xl overflow-hidden bg-black group">
 
         {!iframeError ? (
@@ -289,39 +265,26 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title }) {
               onError={() => setIframeError(true)}
             />
 
-            {/* Top bar — provider badge only */}
-            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 pointer-events-none">
+            {/* Top bar */}
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
               <div className="flex items-center gap-2">
                 <span className="text-white text-xs bg-cinema-accent px-2 py-0.5 rounded font-medium">
                   {provider}
                 </span>
                 <span className="text-white/60 text-xs truncate max-w-xs">{title}</span>
                 <span className="text-green-400 text-xs bg-green-400/10 border border-green-400/30 px-2 py-0.5 rounded">
-                  🛡️ Protected
+                  🛡️ Ad Protection ON
                 </span>
               </div>
-            </div>
-
-            {/* Server switcher — always visible below player */}
-            {streamSources.length > 1 && (
-              <div className="absolute bottom-0 left-0 right-0 flex items-center gap-2 px-3 py-2 bg-gradient-to-t from-black/80 to-transparent z-20 flex-wrap">
-                {streamSources.map((s, i) => (
-                  <button key={i}
-                    onClick={() => { setSelectedSrc(s); setIframeError(false); }}
-                    className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all border ${
-                      selectedSrc?.url === s.url
-                        ? 'bg-cinema-accent border-cinema-accent text-white'
-                        : 'bg-black/60 border-white/20 text-white hover:border-cinema-accent hover:text-cinema-accent'
-                    }`}>
-                    {s.label || `Server ${i + 1}`}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2">
+                <SourceSelector />
                 <a href={activeUrl} target="_blank" rel="noopener noreferrer"
-                  className="ml-auto flex items-center gap-1 bg-black/60 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-lg transition-colors border border-white/20">
+                  className="flex items-center gap-1 bg-black/60 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-lg transition-colors"
+                  title="Open in new tab if player doesn't load">
                   <FiExternalLink size={12}/> Open
                 </a>
               </div>
-            )}
+            </div>
           </>
         ) : (
           /* Iframe failed to load */
@@ -343,10 +306,31 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title }) {
                 </button>
               )}
             </div>
-            <SourceSelector />
           </div>
         )}
       </div>
+
+      {/* Server switcher — OUTSIDE the player, below it */}
+      {streamSources.length > 1 && (
+        <div className="flex flex-wrap gap-2 mt-3">
+          {streamSources.map((s, i) => (
+            <button key={i}
+              onClick={() => { setSelectedSrc(s); setIframeError(false); }}
+              className={`text-xs px-4 py-2 rounded-xl font-medium transition-all border ${
+                selectedSrc?.url === s.url
+                  ? 'bg-cinema-accent border-cinema-accent text-white'
+                  : 'bg-cinema-card border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white'
+              }`}>
+              {s.label || `Server ${i + 1}`}
+            </button>
+          ))}
+          <a href={activeUrl} target="_blank" rel="noopener noreferrer"
+            className="ml-auto flex items-center gap-1 bg-cinema-card border border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white text-xs px-4 py-2 rounded-xl transition-colors">
+            <FiExternalLink size={12}/> Open
+          </a>
+        </div>
+      )}
+    </>
     );
   }
 
