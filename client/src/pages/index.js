@@ -248,14 +248,16 @@ export default function HomePage() {
     return (
       <>
         <Head><title>RoyalQueen — Watch Movies & TV Shows</title></Head>
-        <div className="w-full h-[70vh] bg-cinema-card animate-pulse" />
-        <div className="max-w-7xl mx-auto px-4 mt-8 space-y-12">
+        {/* Full-width hero skeleton */}
+        <div className="w-full h-[45vh] sm:h-[60vh] md:h-[70vh] shimmer" />
+        {/* Row skeletons */}
+        <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mt-8 space-y-10">
           {[1,2,3,4].map(i => (
             <div key={i} className="space-y-3">
-              <div className="h-7 w-48 bg-cinema-card animate-pulse rounded" />
-              <div className="flex gap-4">
+              <div className="h-6 w-40 shimmer rounded" />
+              <div className="flex gap-3 overflow-hidden">
                 {[1,2,3,4,5,6].map(j => (
-                  <div key={j} className="w-44 aspect-[2/3] bg-cinema-card animate-pulse rounded-lg shrink-0" />
+                  <div key={j} className="w-36 sm:w-44 shrink-0 aspect-[2/3] shimmer rounded-lg" />
                 ))}
               </div>
             </div>
