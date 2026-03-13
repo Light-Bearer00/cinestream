@@ -18,18 +18,86 @@ import { FiPlay, FiInfo, FiStar, FiChevronLeft, FiChevronRight } from 'react-ico
 
 const GENRE_ROWS = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Documentary'];
 
-// ── Auto-rotating Hero Banner ──────────────────────────────────────────────
+// ── Extract TMDB ID from stream URL ──────────────────────────────────────────
+function extractTmdbId(movie) {
+  const urls = [
+    movie.streamUrl,
+    ...(movie.streamSources || []).map(s => s.url),
+  ].filter(Boolean);
+  for (const url of urls) {
+    const m = url.match(/tmdb[=/](\d+)/i);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+// ── Auto-rotating Hero Banner with YouTube Trailer ────────────────────────
+const TMDB_KEY = 'd4c55464b2e3eb6c6ec8aa2173bf6e2d';
+
+async function fetchTrailerKey(movie) {
+  try {
+    // Try to get TMDB id from title+year search
+    const search = await fetch(
+      `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(movie.title)}&year=${movie.year}`
+    ).then(r => r.json());
+    const tmdbId = search.results?.[0]?.id;
+    if (!tmdbId) return null;
+
+    // Fetch videos
+    const videos = await fetch(
+      `https://api.themoviedb.org/3/movie/${tmdbId}/videos?api_key=${TMDB_KEY}`
+    ).then(r => r.json());
+
+    // Prefer official YouTube trailer
+    const trailer = videos.results?.find(v =>
+      v.site === 'YouTube' && v.type === 'Trailer' && v.official
+    ) || videos.results?.find(v =>
+      v.site === 'YouTube' && v.type === 'Trailer'
+    ) || videos.results?.find(v =>
+      v.site === 'YouTube' && v.type === 'Teaser'
+    );
+
+    return trailer?.key || null;
+  } catch {
+    return null;
+  }
+}
+
 function HeroCarousel({ movies }) {
   const [current, setCurrent] = useState(0);
+  const [trailerKeys, setTrailerKeys] = useState({});
+  const [muted, setMuted] = useState(true);
+  const [showTrailer, setShowTrailer] = useState(false);
   const timerRef = useRef(null);
+  const trailerTimer = useRef(null);
   const router = useRouter();
 
   const startTimer = () => {
     clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setCurrent(c => (c + 1) % movies.length);
-    }, 6000);
+      setShowTrailer(false);
+    }, 8000);
   };
+
+  // Fetch trailer for current movie
+  useEffect(() => {
+    const movie = movies[current];
+    if (!movie) return;
+    if (trailerKeys[movie._id] !== undefined) {
+      // Already fetched — show trailer after short delay
+      if (trailerKeys[movie._id]) {
+        trailerTimer.current = setTimeout(() => setShowTrailer(true), 1200);
+      }
+      return;
+    }
+    setShowTrailer(false);
+    fetchTrailerKey(movie).then(key => {
+      setTrailerKeys(prev => ({ ...prev, [movie._id]: key || null }));
+      if (key) trailerTimer.current = setTimeout(() => setShowTrailer(true), 1200);
+    });
+    return () => clearTimeout(trailerTimer.current);
+  }, [current, movies]);
 
   useEffect(() => {
     if (movies.length > 1) startTimer();
@@ -38,20 +106,22 @@ function HeroCarousel({ movies }) {
 
   const go = (dir) => {
     setCurrent(c => (c + dir + movies.length) % movies.length);
+    setShowTrailer(false);
     startTimer();
   };
 
   if (!movies.length) return null;
   const movie = movies[current];
+  const trailerKey = trailerKeys[movie._id];
 
   return (
-    <div className="relative w-full h-[45vh] sm:h-[60vh] md:h-[70vh] min-h-[280px] overflow-hidden">
-      {/* Backdrop */}
+    <div className="relative w-full h-[45vh] sm:h-[60vh] md:h-[75vh] min-h-[320px] overflow-hidden bg-cinema-black">
+      {/* Backdrop images (shown when no trailer) */}
       {movies.map((m, i) => (
         <div
           key={m._id}
           className="absolute inset-0 transition-opacity duration-1000"
-          style={{ opacity: i === current ? 1 : 0 }}
+          style={{ opacity: i === current && !showTrailer ? 1 : 0 }}
         >
           {m.backdrop || m.poster ? (
             <Image
@@ -68,12 +138,34 @@ function HeroCarousel({ movies }) {
         </div>
       ))}
 
+      {/* YouTube trailer iframe */}
+      {trailerKey && (
+        <div
+          className="absolute inset-0 transition-opacity duration-1000"
+          style={{ opacity: showTrailer ? 1 : 0, pointerEvents: showTrailer ? 'auto' : 'none' }}
+        >
+          <iframe
+            key={trailerKey}
+            src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=${muted ? 1 : 0}&controls=0&loop=1&playlist=${trailerKey}&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3`}
+            allow="autoplay; encrypted-media"
+            className="absolute w-full h-full"
+            style={{
+              top: '50%', left: '50%',
+              transform: 'translate(-50%, -50%) scale(1.8)',
+              border: 'none',
+              pointerEvents: 'none',
+            }}
+            title={movie.title}
+          />
+        </div>
+      )}
+
       {/* Gradient overlays */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-t from-cinema-black via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent z-10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-cinema-black via-transparent to-transparent z-10" />
 
       {/* Content */}
-      <div className="absolute inset-0 flex items-center">
+      <div className="absolute inset-0 flex items-center z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="max-w-xl">
             {/* Badges */}
@@ -91,6 +183,11 @@ function HeroCarousel({ movies }) {
               {movie.genre?.[0] && (
                 <span className="text-xs border border-white/30 text-white/80 px-2.5 py-1 rounded-full">
                   {movie.genre[0]}
+                </span>
+              )}
+              {showTrailer && (
+                <span className="text-xs bg-red-600/80 text-white px-2.5 py-1 rounded-full font-semibold animate-pulse">
+                  ▶ Trailer
                 </span>
               )}
             </div>
@@ -113,11 +210,13 @@ function HeroCarousel({ movies }) {
               {movie.duration > 0 && <span>{movie.duration} min</span>}
             </div>
 
-            <p className="text-white/70 text-sm leading-relaxed mb-6 line-clamp-3">
-              {movie.description}
-            </p>
+            {!showTrailer && (
+              <p className="text-white/70 text-sm leading-relaxed mb-6 line-clamp-3">
+                {movie.description}
+              </p>
+            )}
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <button
                 onClick={() => router.push(`/movie/${movie._id}`)}
                 className="flex items-center gap-2 bg-white text-black px-6 py-3 rounded-xl font-bold text-sm hover:bg-white/90 transition-colors"
@@ -130,33 +229,43 @@ function HeroCarousel({ movies }) {
               >
                 <FiInfo size={16} /> More Info
               </Link>
+              {/* Mute/unmute button — only show when trailer is playing */}
+              {showTrailer && (
+                <button
+                  onClick={() => setMuted(m => !m)}
+                  className="flex items-center gap-2 bg-black/40 border border-white/30 text-white px-4 py-3 rounded-xl text-sm hover:bg-black/60 transition-colors"
+                  title={muted ? 'Unmute' : 'Mute'}
+                >
+                  {muted ? '🔇' : '🔊'}
+                </button>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Carousel navigation arrows */}
+      {/* Carousel arrows */}
       {movies.length > 1 && (
         <>
           <button
             onClick={() => go(-1)}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition-colors z-10"
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition-colors z-30"
           >
             <FiChevronLeft size={20} />
           </button>
           <button
             onClick={() => go(1)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition-colors z-10"
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition-colors z-30"
           >
             <FiChevronRight size={20} />
           </button>
 
           {/* Dot indicators */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-30">
             {movies.map((_, i) => (
               <button
                 key={i}
-                onClick={() => { setCurrent(i); startTimer(); }}
+                onClick={() => { setCurrent(i); setShowTrailer(false); startTimer(); }}
                 className={`rounded-full transition-all ${
                   i === current ? 'w-6 h-2 bg-cinema-accent' : 'w-2 h-2 bg-white/40 hover:bg-white/70'
                 }`}
