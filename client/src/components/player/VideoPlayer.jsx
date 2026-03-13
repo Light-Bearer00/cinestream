@@ -252,6 +252,12 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title }) {
           <>
 
 
+            {/* Invisible shields on all 4 edges to block ad banner clicks */}
+            <div className="absolute top-0 left-0 right-0 h-10 z-10" style={{pointerEvents:'auto'}} onClick={e => e.preventDefault()} />
+            <div className="absolute bottom-0 left-0 right-0 h-10 z-10" style={{pointerEvents:'auto'}} onClick={e => e.preventDefault()} />
+            <div className="absolute top-10 bottom-10 left-0 w-6 z-10" style={{pointerEvents:'auto'}} onClick={e => e.preventDefault()} />
+            <div className="absolute top-10 bottom-10 right-0 w-6 z-10" style={{pointerEvents:'auto'}} onClick={e => e.preventDefault()} />
+
             <iframe
               key={activeUrl}
               src={activeUrl}
@@ -261,7 +267,6 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title }) {
               referrerPolicy="origin"
               scrolling="no"
               title={title}
-              sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups-to-escape-sandbox allow-fullscreen"
               onError={() => setIframeError(true)}
             />
 
