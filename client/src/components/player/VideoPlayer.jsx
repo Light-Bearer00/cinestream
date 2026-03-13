@@ -78,7 +78,7 @@ function getProviderName(url) {
   return 'External';
 }
 
-export default function VideoPlayer({ streamUrl, streamSources = [], title }) {
+export default function VideoPlayer({ streamUrl, streamSources = [], title, onProgress }) {
   const videoRef     = useRef(null);
   const containerRef = useRef(null);
   const hlsRef       = useRef(null);
@@ -350,6 +350,10 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title }) {
           const v = videoRef.current; if (!v) return;
           setCurrentTime(v.currentTime);
           if (v.buffered.length) setBuffered((v.buffered.end(v.buffered.length - 1) / v.duration) * 100);
+          // Report progress every 5 seconds
+          if (onProgress && v.duration > 30 && Math.round(v.currentTime) % 5 === 0) {
+            onProgress(v.currentTime, v.duration);
+          }
         }}
         onLoadedMetadata={() => { setDuration(videoRef.current?.duration || 0); setIsBuffering(false); }}
         onWaiting={()  => setIsBuffering(true)}

@@ -1,29 +1,34 @@
 /**
  * /tv/[id] — TV Show detail page
- * Shows info, seasons list, episodes browser, and video player
+ * Saves episode watch progress and resumes from last watched position.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
 import Link from 'next/link';
 import { tvApi } from '../../utils/api';
 import VideoPlayer from '../../components/player/VideoPlayer';
-import { FiStar, FiCalendar, FiTv, FiPlay, FiChevronDown, FiChevronUp, FiGlobe, FiHeart } from 'react-icons/fi';
+import {
+  saveEpisodeProgress, getEpisodeProgress,
+  getShowLastWatched, formatTimeRemaining
+} from '../../utils/watchProgress';
+import { FiStar, FiCalendar, FiTv, FiPlay, FiChevronDown, FiChevronUp, FiGlobe } from 'react-icons/fi';
 
 export default function TVShowPage() {
   const router = useRouter();
-  const { id } = router.query;
+  const { id, resume } = router.query;
 
-  const [show,          setShow]          = useState(null);
-  const [loading,       setLoading]       = useState(true);
+  const [show,           setShow]           = useState(null);
+  const [loading,        setLoading]        = useState(true);
   const [selectedSeason, setSelectedSeason] = useState(1);
-  const [seasonData,    setSeasonData]    = useState(null);
-  const [seasonLoading, setSeasonLoading] = useState(false);
-  const [playingEp,     setPlayingEp]     = useState(null); // { season, episode, title, sources }
-  const [expandedEps,   setExpandedEps]   = useState(false);
-  const [imgError,      setImgError]      = useState(false);
+  const [seasonData,     setSeasonData]     = useState(null);
+  const [seasonLoading,  setSeasonLoading]  = useState(false);
+  const [playingEp,      setPlayingEp]      = useState(null);
+  const [expandedEps,    setExpandedEps]    = useState(false);
+  const [imgError,       setImgError]       = useState(false);
+  const [lastWatched,    setLastWatched]    = useState(null);
 
   useEffect(() => {
     if (!id) return;
@@ -31,7 +36,18 @@ export default function TVShowPage() {
     tvApi.getById(id)
       .then(r => {
         setShow(r.data);
-        setSelectedSeason(1);
+        // Check last watched episode
+        const lw = getShowLastWatched(id);
+        setLastWatched(lw);
+        // If resume param set, go to that season
+        if (resume) {
+          const match = resume.match(/s(\d+)e(\d+)/i);
+          if (match) setSelectedSeason(parseInt(match[1]));
+        } else if (lw) {
+          setSelectedSeason(lw.season);
+        } else {
+          setSelectedSeason(1);
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -42,7 +58,18 @@ export default function TVShowPage() {
     setSeasonLoading(true);
     setPlayingEp(null);
     tvApi.getSeason(id, selectedSeason)
-      .then(r => setSeasonData(r.data))
+      .then(r => {
+        setSeasonData(r.data);
+        // Auto-play resumed episode if requested
+        if (resume) {
+          const match = resume.match(/s(\d+)e(\d+)/i);
+          if (match && parseInt(match[1]) === selectedSeason) {
+            const epNum = parseInt(match[2]);
+            const ep = r.data?.episodes?.find(e => e.episodeNumber === epNum);
+            if (ep) setTimeout(() => playEpisode(ep), 300);
+          }
+        }
+      })
       .catch(() => setSeasonData(null))
       .finally(() => setSeasonLoading(false));
   }, [id, selectedSeason, show]);
@@ -58,6 +85,20 @@ export default function TVShowPage() {
       document.getElementById('player-section')?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
   };
+
+  // Save progress callback
+  const handleProgress = useCallback((currentTime, duration) => {
+    if (!show || !playingEp) return;
+    saveEpisodeProgress(
+      id, playingEp.season, playingEp.episode,
+      currentTime, duration,
+      {
+        title:     playingEp.title,
+        poster:    show.poster,
+        showTitle: show.title,
+      }
+    );
+  }, [id, show, playingEp]);
 
   if (loading) {
     return (
@@ -93,7 +134,8 @@ export default function TVShowPage() {
       {/* Backdrop */}
       <div className="relative h-[45vh] min-h-72 overflow-hidden">
         {(show.backdrop || show.poster) && !imgError ? (
-          <Image src={show.backdrop || show.poster} alt={show.title} fill className="object-cover object-top" priority unoptimized onError={() => setImgError(true)} />
+          <Image src={show.backdrop || show.poster} alt={show.title} fill
+            className="object-cover object-top" priority unoptimized onError={() => setImgError(true)} />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-cinema-card to-cinema-black" />
         )}
@@ -115,13 +157,23 @@ export default function TVShowPage() {
                   <p className="text-cinema-muted text-sm text-center px-4">{show.title}</p>
                 </div>
               )}
+              {/* Last watched badge on poster */}
+              {lastWatched && (
+                <div className="absolute bottom-0 left-0 right-0">
+                  <div className="h-1.5 bg-white/20">
+                    <div className="h-full bg-cinema-accent" style={{ width: `${lastWatched.percent}%` }} />
+                  </div>
+                  <div className="bg-black/70 text-cinema-accent text-xs text-center py-1 font-medium">
+                    S{lastWatched.season} E{lastWatched.episode} · {formatTimeRemaining(lastWatched.currentTime, lastWatched.duration)}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Info */}
           <div className="lg:col-span-2 space-y-5">
 
-            {/* Genres */}
             <div className="flex flex-wrap gap-2 pt-8 lg:pt-0">
               {show.genre?.map(g => (
                 <span key={g} className="text-xs text-cinema-accent border border-cinema-accent/40 px-2.5 py-1 rounded-full">{g}</span>
@@ -135,7 +187,8 @@ export default function TVShowPage() {
               )}
             </div>
 
-            <h1 className="text-4xl md:text-6xl text-white leading-none" style={{ fontFamily: 'Bebas Neue, serif', letterSpacing: '0.05em' }}>
+            <h1 className="text-4xl md:text-6xl text-white leading-none"
+              style={{ fontFamily: 'Bebas Neue, serif', letterSpacing: '0.05em' }}>
               {show.title}
             </h1>
 
@@ -161,10 +214,7 @@ export default function TVShowPage() {
               )}
               {show.network && <span>{show.network}</span>}
               {show.language && (
-                <div className="flex items-center gap-1.5">
-                  <FiGlobe size={13} />
-                  <span>{show.language}</span>
-                </div>
+                <div className="flex items-center gap-1.5"><FiGlobe size={13} /><span>{show.language}</span></div>
               )}
             </div>
 
@@ -177,7 +227,32 @@ export default function TVShowPage() {
               </div>
             )}
 
-            {/* ── Season Selector ── */}
+            {/* Continue watching banner */}
+            {lastWatched && (
+              <div className="flex items-center gap-4 bg-cinema-card border border-cinema-accent/30 rounded-xl p-4">
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-medium">Continue Watching</p>
+                  <p className="text-cinema-muted text-xs mt-0.5">
+                    S{lastWatched.season} E{lastWatched.episode} · {formatTimeRemaining(lastWatched.currentTime, lastWatched.duration)}
+                  </p>
+                  <div className="mt-2 h-1 bg-white/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-cinema-accent rounded-full" style={{ width: `${lastWatched.percent}%` }} />
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedSeason(lastWatched.season);
+                    const ep = seasonData?.episodes?.find(e => e.episodeNumber === lastWatched.episode);
+                    if (ep) playEpisode(ep);
+                  }}
+                  className="flex items-center gap-2 bg-cinema-accent hover:bg-red-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shrink-0"
+                >
+                  <FiPlay size={14} className="fill-white" /> Resume
+                </button>
+              </div>
+            )}
+
+            {/* Season Selector */}
             {show.totalSeasons > 0 && (
               <div>
                 <h2 className="text-xl text-white mb-3" style={{ fontFamily: 'Bebas Neue, serif', letterSpacing: '0.1em' }}>
@@ -185,15 +260,12 @@ export default function TVShowPage() {
                 </h2>
                 <div className="flex flex-wrap gap-2">
                   {Array.from({ length: show.totalSeasons }, (_, i) => i + 1).map(s => (
-                    <button
-                      key={s}
-                      onClick={() => setSelectedSeason(s)}
+                    <button key={s} onClick={() => setSelectedSeason(s)}
                       className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
                         selectedSeason === s
                           ? 'bg-cinema-accent border-cinema-accent text-white'
                           : 'bg-cinema-card border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white'
-                      }`}
-                    >
+                      }`}>
                       Season {s}
                     </button>
                   ))}
@@ -201,11 +273,15 @@ export default function TVShowPage() {
               </div>
             )}
 
-            {/* ── Episodes List ── */}
+            {/* Episodes List */}
             <div>
               <h2 className="text-xl text-white mb-3" style={{ fontFamily: 'Bebas Neue, serif', letterSpacing: '0.1em' }}>
                 SEASON {selectedSeason} EPISODES
-                {seasonData && <span className="text-cinema-muted text-sm font-sans ml-2 normal-case tracking-normal">({seasonData.episodeCount || seasonData.episodes?.length || 0} episodes)</span>}
+                {seasonData && (
+                  <span className="text-cinema-muted text-sm font-sans ml-2 normal-case tracking-normal">
+                    ({seasonData.episodeCount || seasonData.episodes?.length || 0} episodes)
+                  </span>
+                )}
               </h2>
 
               {seasonLoading ? (
@@ -217,75 +293,94 @@ export default function TVShowPage() {
               ) : (
                 <>
                   <div className="space-y-2">
-                    {visibleEpisodes.map(ep => (
-                      <div
-                        key={ep.episodeNumber}
-                        className={`flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer group ${
-                          playingEp?.episode === ep.episodeNumber && playingEp?.season === selectedSeason
-                            ? 'border-cinema-accent bg-cinema-accent/10'
-                            : 'border-cinema-border bg-cinema-card hover:border-cinema-accent/50'
-                        }`}
-                        onClick={() => playEpisode(ep)}
-                      >
-                        {/* Episode still / thumbnail */}
-                        <div className="relative w-24 h-14 rounded-lg overflow-hidden shrink-0 bg-cinema-dark">
-                          {ep.stillImage ? (
-                            <Image src={ep.stillImage} alt={ep.title} fill className="object-cover" unoptimized />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <FiPlay className="text-cinema-muted" size={20} />
-                            </div>
-                          )}
-                          {/* Play overlay */}
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <FiPlay className="text-white fill-white" size={18} />
-                          </div>
-                        </div>
+                    {visibleEpisodes.map(ep => {
+                      const epProg = getEpisodeProgress(id, selectedSeason, ep.episodeNumber);
+                      const isPlaying = playingEp?.episode === ep.episodeNumber && playingEp?.season === selectedSeason;
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-cinema-accent text-xs font-bold shrink-0">
-                              E{ep.episodeNumber}
-                            </span>
-                            <p className="text-cinema-text text-sm font-medium truncate">{ep.title}</p>
-                            {ep.runtime > 0 && (
-                              <span className="text-cinema-muted text-xs shrink-0">{ep.runtime}m</span>
+                      return (
+                        <div
+                          key={ep.episodeNumber}
+                          className={`flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer group ${
+                            isPlaying
+                              ? 'border-cinema-accent bg-cinema-accent/10'
+                              : 'border-cinema-border bg-cinema-card hover:border-cinema-accent/50'
+                          }`}
+                          onClick={() => playEpisode(ep)}
+                        >
+                          {/* Thumbnail */}
+                          <div className="relative w-24 h-14 rounded-lg overflow-hidden shrink-0 bg-cinema-dark">
+                            {ep.stillImage ? (
+                              <Image src={ep.stillImage} alt={ep.title} fill className="object-cover" unoptimized />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <FiPlay className="text-cinema-muted" size={20} />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <FiPlay className="text-white fill-white" size={18} />
+                            </div>
+                            {/* Progress bar on thumbnail */}
+                            {epProg && epProg.percent > 2 && epProg.percent < 95 && (
+                              <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
+                                <div className="h-full bg-cinema-accent" style={{ width: `${epProg.percent}%` }} />
+                              </div>
+                            )}
+                            {/* Watched checkmark */}
+                            {epProg && epProg.percent >= 95 && (
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                <span className="text-green-400 text-xl">✓</span>
+                              </div>
                             )}
                           </div>
-                          {ep.overview && (
-                            <p className="text-cinema-muted text-xs mt-0.5 line-clamp-1">{ep.overview}</p>
-                          )}
-                        </div>
 
-                        <FiPlay
-                          className={`shrink-0 transition-colors ${
-                            playingEp?.episode === ep.episodeNumber && playingEp?.season === selectedSeason
-                              ? 'text-cinema-accent fill-cinema-accent'
-                              : 'text-cinema-muted group-hover:text-white'
-                          }`}
-                          size={16}
-                        />
-                      </div>
-                    ))}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-cinema-accent text-xs font-bold shrink-0">E{ep.episodeNumber}</span>
+                              <p className="text-cinema-text text-sm font-medium truncate">{ep.title}</p>
+                              {ep.runtime > 0 && (
+                                <span className="text-cinema-muted text-xs shrink-0">{ep.runtime}m</span>
+                              )}
+                            </div>
+                            {ep.overview && (
+                              <p className="text-cinema-muted text-xs mt-0.5 line-clamp-1">{ep.overview}</p>
+                            )}
+                            {/* Time remaining */}
+                            {epProg && epProg.percent > 2 && epProg.percent < 95 && (
+                              <p className="text-cinema-accent text-xs mt-0.5">
+                                {formatTimeRemaining(epProg.currentTime, epProg.duration)}
+                              </p>
+                            )}
+                          </div>
+
+                          <FiPlay
+                            className={`shrink-0 transition-colors ${
+                              isPlaying ? 'text-cinema-accent fill-cinema-accent' : 'text-cinema-muted group-hover:text-white'
+                            }`}
+                            size={16}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
 
-                  {/* Show more / less */}
                   {(seasonData?.episodes?.length || 0) > 6 && (
-                    <button
-                      onClick={() => setExpandedEps(!expandedEps)}
-                      className="mt-3 flex items-center gap-2 text-cinema-muted hover:text-white text-sm transition-colors"
-                    >
-                      {expandedEps ? <><FiChevronUp size={16}/> Show less</> : <><FiChevronDown size={16}/> Show all {seasonData.episodes.length} episodes</>}
+                    <button onClick={() => setExpandedEps(!expandedEps)}
+                      className="mt-3 flex items-center gap-2 text-cinema-muted hover:text-white text-sm transition-colors">
+                      {expandedEps
+                        ? <><FiChevronUp size={16}/> Show less</>
+                        : <><FiChevronDown size={16}/> Show all {seasonData.episodes.length} episodes</>
+                      }
                     </button>
                   )}
                 </>
               )}
             </div>
 
-            {/* ── Video Player ── */}
+            {/* Video Player */}
             {playingEp && (
               <div id="player-section" className="mt-4 animate-slide-up">
-                <h2 className="text-2xl text-white mb-1" style={{ fontFamily: 'Bebas Neue, serif', letterSpacing: '0.1em' }}>
+                <h2 className="text-2xl text-white mb-1"
+                  style={{ fontFamily: 'Bebas Neue, serif', letterSpacing: '0.1em' }}>
                   NOW PLAYING
                 </h2>
                 <p className="text-cinema-muted text-sm mb-3">{show.title} · {playingEp.title}</p>
@@ -296,6 +391,7 @@ export default function TVShowPage() {
                       streamUrl={playingEp.sources[0].url}
                       streamSources={playingEp.sources}
                       title={`${show.title} ${playingEp.title}`}
+                      onProgress={handleProgress}
                     />
                     <p className="text-cinema-muted text-xs mt-2">
                       💡 If one server doesn't work, try another. Space = play/pause · F = fullscreen
