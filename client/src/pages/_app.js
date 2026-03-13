@@ -12,7 +12,7 @@ import Layout from '../components/layout/Layout';
 import ProtectedRoute from '../components/ui/ProtectedRoute';
 
 // Only the login page is public — everything else requires login
-const PUBLIC_PATHS = ['/auth/login'];
+const PUBLIC_PATHS = ['/auth/login', '/auth/register'];
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();

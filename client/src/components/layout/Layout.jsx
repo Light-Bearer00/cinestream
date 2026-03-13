@@ -10,7 +10,8 @@ export default function Layout({ children }) {
   return (
     <div className="min-h-screen bg-cinema-black flex flex-col">
       <Navbar />
-      <main className="flex-1">{children}</main>
+      {/* pt-16 ensures content is never hidden under the fixed navbar */}
+      <main className="flex-1 pt-16">{children}</main>
       <Footer />
     </div>
   );

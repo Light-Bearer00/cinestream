@@ -45,7 +45,7 @@ function HeroCarousel({ movies }) {
   const movie = movies[current];
 
   return (
-    <div className="relative w-full h-[70vh] min-h-[500px] overflow-hidden">
+    <div className="relative w-full h-[45vh] sm:h-[60vh] md:h-[70vh] min-h-[280px] overflow-hidden">
       {/* Backdrop */}
       {movies.map((m, i) => (
         <div
@@ -96,7 +96,7 @@ function HeroCarousel({ movies }) {
             </div>
 
             <h1
-              className="text-5xl md:text-7xl text-white leading-none mb-3"
+              className="text-3xl sm:text-5xl md:text-7xl text-white leading-none mb-3"
               style={{ fontFamily: 'Bebas Neue, serif', letterSpacing: '0.03em' }}
             >
               {movie.title}
