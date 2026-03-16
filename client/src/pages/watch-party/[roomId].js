@@ -40,6 +40,8 @@ export default function WatchPartyPage() {
   const [connected,   setConnected]   = useState(false);
   const [activeServer,setActiveServer]= useState(0);
   const [loading,     setLoading]     = useState(true);
+  const [streamUrl,   setStreamUrl]   = useState(null);
+  const [streamError, setStreamError] = useState(false);
 
   const socketRef      = useRef(null);
   const videoRef       = useRef(null);
@@ -49,11 +51,42 @@ export default function WatchPartyPage() {
   const hostOffsetRef  = useRef(0);
   const username       = user?.username || 'Guest';
 
-  // ── Load movie ──────────────────────────────────────────────────────────
+  // ── Load movie + extract real stream ───────────────────────────────────
   useEffect(() => {
     if (!movieId) return;
     movieApi.getById(movieId)
-      .then(r => { setMovie(r.data); setLoading(false); })
+      .then(async r => {
+        const m = r.data;
+        setMovie(m);
+
+        // Try to extract real .m3u8 stream via vidsrc.ts
+        try {
+          // Get TMDB id from existing stream URLs
+          const urls = [m.streamUrl, ...(m.streamSources||[]).map(s=>s.url)].filter(Boolean);
+          let tmdbId = null;
+          for (const url of urls) {
+            const match = url.match(/tmdb[=/](\d+)/i);
+            if (match) { tmdbId = match[1]; break; }
+          }
+
+          if (tmdbId) {
+            const res = await fetch(`${API_URL}/api/stream/movie/${tmdbId}`);
+            const data = await res.json();
+            if (data.streams && data.streams.length > 0) {
+              setStreamUrl(data.streams[0].url);
+            } else {
+              setStreamError(true);
+            }
+          } else {
+            setStreamError(true);
+          }
+        } catch (e) {
+          console.error('Stream extraction failed:', e);
+          setStreamError(true);
+        }
+
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [movieId]);
 
@@ -284,65 +317,73 @@ export default function WatchPartyPage() {
           <div className="flex-1 flex flex-col bg-black overflow-hidden">
             <div className="flex-1 relative">
 
-              {isEmbed ? (
-                <>
-                  <iframe
-                    key={`${activeSource?.url}-${activeServer}`}
-                    src={activeSource?.url}
-                    className="absolute inset-0 w-full h-full"
-                    allowFullScreen
-                    allow="autoplay; fullscreen; encrypted-media"
-                    style={{ border: 'none' }}
-                  />
-                  {/* Sync notice */}
-                  {syncNotice && (
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/95 border border-cinema-accent text-white text-sm px-6 py-3 rounded-2xl z-20 text-center animate-fade-in pointer-events-none">
-                      <p className="font-semibold text-cinema-accent">{syncNotice.title}</p>
-                      <p className="text-white/80 text-xs mt-1">{syncNotice.body}</p>
-                    </div>
-                  )}
-                  {/* Host embed controls */}
-                  {isHost && (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/90 rounded-2xl px-5 py-3 border border-white/10 z-10">
-                      <FiClock size={13} className="text-cinema-muted" />
-                      <span className="text-white text-sm font-mono min-w-[52px]">{formatTime(hostTime)}</span>
-                      <div className="w-px h-5 bg-white/20" />
-                      <button onClick={embedPlay}
-                        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-all ${playing ? 'bg-white/10 text-white/40' : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'}`}>
-                        <FiPlay size={11} /> Play
-                      </button>
-                      <button onClick={embedPause}
-                        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-all ${!playing ? 'bg-white/10 text-white/40' : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'}`}>
-                        <FiPause size={11} /> Pause
-                      </button>
-                    </div>
-                  )}
-                  {/* Guest notice */}
-                  {!isHost && (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/80 text-cinema-muted text-xs px-4 py-2 rounded-full z-10 pointer-events-none">
-                      Waiting for host to signal play/pause
-                    </div>
-                  )}
-                </>
-              ) : (
-                // Native video — full sync
+              {streamUrl ? (
+                /* ── Real .m3u8 stream — full sync control ── */
                 <video
                   ref={videoRef}
-                  src={activeSource?.url}
-                  className="absolute inset-0 w-full h-full"
+                  src={streamUrl}
+                  className="w-full h-full"
                   controls={isHost}
-                  onPlay={onPlay}
-                  onPause={onPause}
-                  onSeeked={onSeeked}
-                  onTimeUpdate={() => setHostTime(videoRef.current?.currentTime || 0)}
+                  onPlay={handlePlay}
+                  onPause={handlePause}
+                  onSeeked={handleSeeked}
+                  onTimeUpdate={() => { if (videoRef.current) setHostTime(videoRef.current.currentTime); }}
                   onLoadedMetadata={() => {
-                    if (hostOffsetRef.current > 2 && videoRef.current) {
+                    if (videoRef.current && hostOffsetRef.current > 2) {
                       videoRef.current.currentTime = hostOffsetRef.current;
                     }
                   }}
+                  style={{ minHeight: '400px', background: '#000' }}
                 />
+              ) : streamError ? (
+                /* ── Fallback: embed iframe with manual sync notices ── */
+                <>
+                  {movie && (() => {
+                    const src = movie.streamSources?.[activeServer]?.url || movie.streamUrl;
+                    return src ? (
+                      <iframe
+                        key={src}
+                        src={src}
+                        className="w-full h-full"
+                        allowFullScreen
+                        allow="autoplay; fullscreen"
+                        style={{ border: 'none', minHeight: '400px' }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-cinema-muted">
+                        No stream available
+                      </div>
+                    );
+                  })()}
+                  {syncNotice && (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/90 border border-cinema-accent text-white text-sm px-5 py-3 rounded-2xl z-20 text-center min-w-64">
+                      <p className="font-semibold text-cinema-accent mb-1">{syncNotice.title}</p>
+                      <p className="text-white/80">{syncNotice.body}</p>
+                    </div>
+                  )}
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/90 rounded-full px-5 py-2.5 border border-white/10 z-10">
+                    <FiClock size={14} className="text-cinema-muted" />
+                    <span className="text-white text-sm font-mono">{formatTime(hostTime)}</span>
+                    {isHost && (
+                      <>
+                        <div className="w-px h-4 bg-white/20" />
+                        <button onClick={handleEmbedPlay} className="flex items-center gap-1.5 text-green-400 text-xs hover:text-green-300">
+                          <FiPlay size={12} /> Tell guests to play
+                        </button>
+                        <button onClick={handleEmbedPause} className="flex items-center gap-1.5 text-yellow-400 text-xs hover:text-yellow-300">
+                          <FiPause size={12} /> Pause
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </>
+              ) : (
+                /* ── Loading stream ── */
+                <div className="w-full h-full flex flex-col items-center justify-center gap-4" style={{ minHeight: '400px' }}>
+                  <div className="w-10 h-10 border-4 border-cinema-accent border-t-transparent rounded-full animate-spin" />
+                  <p className="text-cinema-muted text-sm">Extracting stream...</p>
+                </div>
               )}
-            </div>
 
             {/* Server switcher */}
             {streamSources.length > 1 && (

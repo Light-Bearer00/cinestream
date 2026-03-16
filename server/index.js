@@ -18,6 +18,7 @@ const adminRoutes     = require('./routes/admin');
 const scraperRoutes   = require('./routes/scraper');
 const tvRoutes        = require('./routes/tv');
 const tvScraperRoutes = require('./routes/tv-scraper');
+const streamRoutes    = require('./routes/stream');
 
 const app    = express();
 const server = http.createServer(app);
@@ -122,6 +123,7 @@ app.use('/api/admin',      adminRoutes);
 app.use('/api/scraper',    scraperRoutes);
 app.use('/api/tv',         tvRoutes);
 app.use('/api/tv-scraper', tvScraperRoutes);
+app.use('/api/stream',     streamRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'RoyalQueen API running', rooms: Object.keys(rooms).length });
