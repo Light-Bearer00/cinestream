@@ -23,10 +23,10 @@ function formatTime(s) {
 }
 
 export default function WatchPartyPage() {
-  const router        = useRouter();
-  const { roomId }    = router.query;
-  const { user }      = useAuth();
-  const movieId       = router.query.movieId;
+  const router     = useRouter();
+  const { roomId } = router.query;
+  const { user }   = useAuth();
+  const movieId    = router.query.movieId;
 
   const [movie,       setMovie]       = useState(null);
   const [members,     setMembers]     = useState([]);
@@ -39,38 +39,34 @@ export default function WatchPartyPage() {
   const [copied,      setCopied]      = useState(false);
   const [connected,   setConnected]   = useState(false);
   const [activeServer,setActiveServer]= useState(0);
-  const [loading,     setLoading]     = useState(true);
   const [streamUrl,   setStreamUrl]   = useState(null);
   const [streamError, setStreamError] = useState(false);
+  const [loading,     setLoading]     = useState(true);
 
-  const socketRef      = useRef(null);
-  const videoRef       = useRef(null);
-  const chatEndRef     = useRef(null);
-  const isSyncing      = useRef(false);
-  const hostStartRef   = useRef(null);
-  const hostOffsetRef  = useRef(0);
-  const username       = user?.username || 'Guest';
+  const socketRef     = useRef(null);
+  const videoRef      = useRef(null);
+  const chatEndRef    = useRef(null);
+  const isSyncing     = useRef(false);
+  const hostStartRef  = useRef(null);
+  const hostOffsetRef = useRef(0);
+  const username      = user?.username || 'Guest';
 
-  // ── Load movie + extract real stream ───────────────────────────────────
+  // ── Load movie + extract real stream ──────────────────────────────────
   useEffect(() => {
     if (!movieId) return;
     movieApi.getById(movieId)
       .then(async r => {
         const m = r.data;
         setMovie(m);
-
-        // Try to extract real .m3u8 stream via vidsrc.ts
         try {
-          // Get TMDB id from existing stream URLs
-          const urls = [m.streamUrl, ...(m.streamSources||[]).map(s=>s.url)].filter(Boolean);
+          const urls = [m.streamUrl, ...(m.streamSources || []).map(s => s.url)].filter(Boolean);
           let tmdbId = null;
           for (const url of urls) {
             const match = url.match(/tmdb[=/](\d+)/i);
             if (match) { tmdbId = match[1]; break; }
           }
-
           if (tmdbId) {
-            const res = await fetch(`${API_URL}/api/stream/movie/${tmdbId}`);
+            const res  = await fetch(`${API_URL}/api/stream/movie/${tmdbId}`);
             const data = await res.json();
             if (data.streams && data.streams.length > 0) {
               setStreamUrl(data.streams[0].url);
@@ -81,25 +77,22 @@ export default function WatchPartyPage() {
             setStreamError(true);
           }
         } catch (e) {
-          console.error('Stream extraction failed:', e);
           setStreamError(true);
         }
-
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, [movieId]);
 
-  // ── Show sync notice ────────────────────────────────────────────────────
+  // ── Show sync notice ───────────────────────────────────────────────────
   const showNotice = useCallback((title, body) => {
     setSyncNotice({ title, body });
     setTimeout(() => setSyncNotice(null), 5000);
   }, []);
 
-  // ── Connect socket ──────────────────────────────────────────────────────
+  // ── Connect socket ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!roomId || !movieId) return;
-
     const socket = io(API_URL, { transports: ['websocket', 'polling'] });
     socketRef.current = socket;
 
@@ -110,10 +103,10 @@ export default function WatchPartyPage() {
 
     socket.on('disconnect', () => setConnected(false));
 
-    socket.on('room-state', ({ playing, currentTime, hostId, members, myId }) => {
+    socket.on('room-state', ({ playing: p, currentTime, hostId, members: m, myId }) => {
       setIsHost(myId === hostId);
-      setMembers(members);
-      setPlaying(playing);
+      setMembers(m);
+      setPlaying(p);
       setHostTime(currentTime);
       hostOffsetRef.current = currentTime;
       if (videoRef.current && currentTime > 2) {
@@ -123,53 +116,56 @@ export default function WatchPartyPage() {
       }
     });
 
-    socket.on('member-joined', ({ username: u, members }) => {
-      setMembers(members);
-      setMessages(m => [...m, { id: Date.now(), system: true, message: `${u} joined the party 🎉` }]);
+    socket.on('member-joined', ({ username: u, members: m }) => {
+      setMembers(m);
+      setMessages(prev => [...prev, { id: Date.now(), system: true, message: `${u} joined the party` }]);
     });
 
-    socket.on('member-left', ({ members }) => setMembers(members));
+    socket.on('member-left', ({ members: m }) => setMembers(m));
 
-    socket.on('host-changed', ({ hostId, members }) => {
+    socket.on('host-changed', ({ hostId, members: m }) => {
       setIsHost(socket.id === hostId);
-      setMembers(members);
-      if (socket.id === hostId) showNotice('👑 You are now the host', 'You can now control playback');
+      setMembers(m);
+      if (socket.id === hostId) showNotice('You are now the host', 'You can now control playback');
     });
 
     socket.on('play', ({ currentTime }) => {
       setPlaying(true);
       setHostTime(currentTime);
+      hostOffsetRef.current = currentTime;
       if (videoRef.current) {
         isSyncing.current = true;
         videoRef.current.currentTime = currentTime;
         videoRef.current.play().catch(() => {});
         setTimeout(() => { isSyncing.current = false; }, 500);
       } else {
-        showNotice('▶ Host is playing', `Seek to ${formatTime(currentTime)} and press play`);
+        showNotice('Host is playing', `Seek to ${formatTime(currentTime)} and press play`);
       }
     });
 
     socket.on('pause', ({ currentTime }) => {
       setPlaying(false);
       setHostTime(currentTime);
+      hostOffsetRef.current = currentTime;
       if (videoRef.current) {
         isSyncing.current = true;
         videoRef.current.currentTime = currentTime;
         videoRef.current.pause();
         setTimeout(() => { isSyncing.current = false; }, 500);
       } else {
-        showNotice('⏸ Host paused', `Pause your video at ${formatTime(currentTime)}`);
+        showNotice('Host paused', `Pause at ${formatTime(currentTime)}`);
       }
     });
 
     socket.on('seek', ({ currentTime }) => {
       setHostTime(currentTime);
+      hostOffsetRef.current = currentTime;
       if (videoRef.current) {
         isSyncing.current = true;
         videoRef.current.currentTime = currentTime;
         setTimeout(() => { isSyncing.current = false; }, 500);
       } else {
-        showNotice('⏩ Host jumped to', formatTime(currentTime));
+        showNotice('Host seeked', `Jump to ${formatTime(currentTime)}`);
       }
     });
 
@@ -177,29 +173,31 @@ export default function WatchPartyPage() {
       setHostTime(currentTime);
       if (!videoRef.current || isSyncing.current) return;
       const drift = Math.abs(videoRef.current.currentTime - currentTime);
-      if (drift > 4) {
+      if (drift > 3) {
         isSyncing.current = true;
         videoRef.current.currentTime = currentTime;
         setTimeout(() => { isSyncing.current = false; }, 500);
       }
     });
 
-    socket.on('chat-message', msg => setMessages(m => [...m, msg]));
+    socket.on('chat-message', msg => setMessages(prev => [...prev, msg]));
 
-    return () => { socket.disconnect(); };
+    return () => socket.disconnect();
   }, [roomId, movieId, username, showNotice]);
 
-  // ── Auto-scroll chat ────────────────────────────────────────────────────
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  // ── Auto scroll chat ───────────────────────────────────────────────────
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-  // ── Host: broadcast time every 5s ───────────────────────────────────────
+  // ── Host: broadcast time every 5s ─────────────────────────────────────
   useEffect(() => {
     if (!isHost) return;
     const t = setInterval(() => {
       let ct = 0;
       if (videoRef.current) {
         ct = videoRef.current.currentTime;
-      } else if (playing && hostStartRef.current) {
+      } else if (playing && hostStartRef.current !== null) {
         ct = hostOffsetRef.current + (Date.now() - hostStartRef.current) / 1000;
       } else {
         ct = hostOffsetRef.current;
@@ -210,46 +208,47 @@ export default function WatchPartyPage() {
     return () => clearInterval(t);
   }, [isHost, roomId, playing]);
 
-  // ── Native video handlers (only host actions emit) ──────────────────────
-  const onPlay = useCallback(() => {
+  // ── Native video handlers ──────────────────────────────────────────────
+  const handlePlay = useCallback(() => {
     if (isSyncing.current || !isHost) return;
     const ct = videoRef.current?.currentTime || 0;
     setPlaying(true);
     socketRef.current?.emit('play', { roomId, currentTime: ct });
   }, [isHost, roomId]);
 
-  const onPause = useCallback(() => {
+  const handlePause = useCallback(() => {
     if (isSyncing.current || !isHost) return;
     const ct = videoRef.current?.currentTime || 0;
     setPlaying(false);
     socketRef.current?.emit('pause', { roomId, currentTime: ct });
   }, [isHost, roomId]);
 
-  const onSeeked = useCallback(() => {
+  const handleSeeked = useCallback(() => {
     if (isSyncing.current || !isHost) return;
     const ct = videoRef.current?.currentTime || 0;
     socketRef.current?.emit('seek', { roomId, currentTime: ct });
   }, [isHost, roomId]);
 
-  // ── Embed host controls ─────────────────────────────────────────────────
-  const embedPlay = () => {
-    hostStartRef.current  = Date.now();
+  // ── Embed helpers ──────────────────────────────────────────────────────
+  const handleEmbedPlay = () => {
+    const ct = hostOffsetRef.current;
+    hostStartRef.current = Date.now();
     setPlaying(true);
-    socketRef.current?.emit('play', { roomId, currentTime: hostOffsetRef.current });
-    showNotice('▶ Sent play signal', `Tell guests to seek to ${formatTime(hostOffsetRef.current)}`);
+    socketRef.current?.emit('play', { roomId, currentTime: ct });
+    showNotice('Host is playing', `Seek to ${formatTime(ct)} and press play`);
   };
 
-  const embedPause = () => {
+  const handleEmbedPause = () => {
     if (hostStartRef.current) {
       hostOffsetRef.current += (Date.now() - hostStartRef.current) / 1000;
       hostStartRef.current = null;
     }
     setPlaying(false);
     socketRef.current?.emit('pause', { roomId, currentTime: hostOffsetRef.current });
-    showNotice('⏸ Sent pause signal', `Guests told to pause at ${formatTime(hostOffsetRef.current)}`);
+    showNotice('Host paused', `Pause at ${formatTime(hostOffsetRef.current)}`);
   };
 
-  // ── Chat ────────────────────────────────────────────────────────────────
+  // ── Send chat ──────────────────────────────────────────────────────────
   const sendChat = (e) => {
     e.preventDefault();
     if (!chatInput.trim() || !socketRef.current) return;
@@ -260,65 +259,79 @@ export default function WatchPartyPage() {
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  // ── Stream sources ──────────────────────────────────────────────────────
-  const streamSources = movie?.streamSources?.length > 0
-    ? movie.streamSources
-    : movie?.streamUrl
-      ? [{ url: movie.streamUrl, provider: 'Server 1', isHLS: movie.streamUrl.endsWith('.m3u8') }]
-      : [];
+  const embedSrc = movie?.streamSources?.[activeServer]?.url || movie?.streamUrl || '';
 
-  const activeSource = streamSources[activeServer] || streamSources[0];
-  const isEmbed      = activeSource && !activeSource.isHLS && !activeSource.url?.includes('archive.org');
-
-  if (loading || !movie) return (
-    <div className="min-h-screen flex items-center justify-center bg-cinema-black">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-cinema-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-cinema-muted text-sm">Loading watch party...</p>
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-cinema-black">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-cinema-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-cinema-muted">Setting up watch party...</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
     <>
-      <Head><title>Watch Party — {movie.title} · RoyalQueen</title></Head>
+      <Head>
+        <title>{movie?.title ? `Watch Party — ${movie.title}` : 'Watch Party'} · RoyalQueen</title>
+      </Head>
 
-      <div className="h-screen flex flex-col bg-cinema-black overflow-hidden">
+      <div className="min-h-screen bg-cinema-black flex flex-col">
 
-        {/* ── Top bar ── */}
-        <div className="h-14 bg-cinema-dark border-b border-cinema-border flex items-center justify-between px-4 shrink-0 z-10">
+        {/* Top bar */}
+        <div className="h-14 bg-cinema-dark border-b border-cinema-border flex items-center justify-between px-4 shrink-0">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.push(`/movie/${movieId}`)} className="text-cinema-muted hover:text-white transition-colors">
+            <button onClick={() => router.back()} className="text-cinema-muted hover:text-white transition-colors">
               <FiArrowLeft size={18} />
             </button>
             <div className={`w-2 h-2 rounded-full shrink-0 ${connected ? 'bg-green-400' : 'bg-red-400'}`} />
-            <span className="text-white font-medium text-sm truncate max-w-xs">{movie.title}</span>
-            {isHost && <span className="text-xs bg-cinema-accent text-white px-2 py-0.5 rounded-full shrink-0">Host</span>}
+            <span className="text-white font-medium text-sm truncate max-w-48">
+              {movie?.title || 'Watch Party'}
+            </span>
+            {isHost && (
+              <span className="text-xs bg-cinema-accent text-white px-2 py-0.5 rounded-full shrink-0">Host</span>
+            )}
+            {streamUrl && (
+              <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded-full shrink-0">Synced</span>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 text-cinema-muted text-sm">
-              <FiUsers size={14} /><span>{members.length}</span>
+              <FiUsers size={14} />
+              <span>{members.length}</span>
             </div>
-            <button onClick={copyLink}
-              className="flex items-center gap-1.5 bg-cinema-card border border-cinema-border hover:border-cinema-accent text-cinema-muted hover:text-white text-xs px-3 py-1.5 rounded-full transition-all">
-              {copied ? <FiCheck size={12} className="text-green-400" /> : <FiLink size={12} />}
-              {copied ? 'Copied!' : 'Invite'}
+            <button
+              onClick={copyLink}
+              className="flex items-center gap-1.5 bg-cinema-card border border-cinema-border hover:border-cinema-accent text-cinema-muted hover:text-white text-xs px-3 py-1.5 rounded-full transition-all"
+            >
+              {copied ? <FiCheck size={13} className="text-green-400" /> : <FiLink size={13} />}
+              {copied ? 'Copied!' : 'Share link'}
             </button>
           </div>
         </div>
 
-        {/* ── Body ── */}
+        {/* Main layout */}
         <div className="flex flex-1 overflow-hidden">
 
-          {/* ── Video ── */}
-          <div className="flex-1 flex flex-col bg-black overflow-hidden">
-            <div className="flex-1 relative">
+          {/* Video panel */}
+          <div className="flex-1 flex flex-col bg-black relative">
 
+            {/* Sync notice overlay */}
+            {syncNotice && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/90 border border-cinema-accent text-white text-sm px-5 py-3 rounded-2xl z-30 text-center min-w-64">
+                <p className="font-semibold text-cinema-accent mb-1">{syncNotice.title}</p>
+                <p className="text-white/80">{syncNotice.body}</p>
+              </div>
+            )}
+
+            <div className="flex-1 relative" style={{ minHeight: '400px' }}>
               {streamUrl ? (
-                /* ── Real .m3u8 stream — full sync control ── */
+                /* Real .m3u8 stream — full sync */
                 <video
                   ref={videoRef}
                   src={streamUrl}
@@ -333,34 +346,22 @@ export default function WatchPartyPage() {
                       videoRef.current.currentTime = hostOffsetRef.current;
                     }
                   }}
-                  style={{ minHeight: '400px', background: '#000' }}
+                  style={{ width: '100%', height: '100%', background: '#000' }}
                 />
               ) : streamError ? (
-                /* ── Fallback: embed iframe with manual sync notices ── */
+                /* Fallback embed */
                 <>
-                  {movie && (() => {
-                    const src = movie.streamSources?.[activeServer]?.url || movie.streamUrl;
-                    return src ? (
-                      <iframe
-                        key={src}
-                        src={src}
-                        className="w-full h-full"
-                        allowFullScreen
-                        allow="autoplay; fullscreen"
-                        style={{ border: 'none', minHeight: '400px' }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-cinema-muted">
-                        No stream available
-                      </div>
-                    );
-                  })()}
-                  {syncNotice && (
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/90 border border-cinema-accent text-white text-sm px-5 py-3 rounded-2xl z-20 text-center min-w-64">
-                      <p className="font-semibold text-cinema-accent mb-1">{syncNotice.title}</p>
-                      <p className="text-white/80">{syncNotice.body}</p>
-                    </div>
+                  {embedSrc && (
+                    <iframe
+                      key={embedSrc}
+                      src={embedSrc}
+                      className="w-full h-full"
+                      allowFullScreen
+                      allow="autoplay; fullscreen"
+                      style={{ border: 'none', width: '100%', height: '100%' }}
+                    />
                   )}
+                  {/* Embed control bar */}
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/90 rounded-full px-5 py-2.5 border border-white/10 z-10">
                     <FiClock size={14} className="text-cinema-muted" />
                     <span className="text-white text-sm font-mono">{formatTime(hostTime)}</span>
@@ -375,67 +376,65 @@ export default function WatchPartyPage() {
                         </button>
                       </>
                     )}
+                    {!isHost && (
+                      <span className="text-cinema-muted text-xs">Follow host timestamps</span>
+                    )}
                   </div>
                 </>
               ) : (
-                /* ── Loading stream ── */
-                <div className="w-full h-full flex flex-col items-center justify-center gap-4" style={{ minHeight: '400px' }}>
+                /* Extracting stream */
+                <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-cinema-black">
                   <div className="w-10 h-10 border-4 border-cinema-accent border-t-transparent rounded-full animate-spin" />
-                  <p className="text-cinema-muted text-sm">Extracting stream...</p>
+                  <p className="text-cinema-muted text-sm">Extracting stream for sync...</p>
                 </div>
               )}
+            </div>
 
-            {/* Server switcher */}
-            {streamSources.length > 1 && (
-              <div className="bg-cinema-dark border-t border-cinema-border px-4 py-2 flex items-center gap-2 shrink-0">
-                <span className="text-cinema-muted text-xs">Server:</span>
-                {streamSources.map((s, i) => (
-                  <button key={i} onClick={() => setActiveServer(i)}
-                    className={`text-xs px-3 py-1 rounded-full transition-all ${
-                      i === activeServer
-                        ? 'bg-cinema-accent text-white'
-                        : 'bg-cinema-card border border-cinema-border text-cinema-muted hover:border-cinema-accent'
-                    }`}>
-                    {s.provider || `Server ${i+1}`}
-                  </button>
-                ))}
+            {/* Guest notice for native video */}
+            {streamUrl && !isHost && (
+              <div className="bg-cinema-dark border-t border-cinema-border px-4 py-2 text-center shrink-0">
+                <p className="text-cinema-muted text-xs">Playback is controlled by the host</p>
               </div>
             )}
           </div>
 
-          {/* ── Chat sidebar ── */}
-          <div className="w-72 shrink-0 bg-cinema-dark border-l border-cinema-border flex flex-col hidden md:flex">
+          {/* Chat sidebar */}
+          <div className="w-72 shrink-0 bg-cinema-dark border-l border-cinema-border flex-col hidden md:flex">
 
             {/* Members */}
             <div className="px-4 py-3 border-b border-cinema-border">
               <p className="text-cinema-muted text-xs uppercase tracking-widest mb-2">Watching now</p>
-              <div className="flex flex-col gap-1.5 max-h-28 overflow-y-auto">
+              <div className="flex flex-wrap gap-2">
                 {members.map(m => (
-                  <div key={m.id} className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-cinema-accent rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
+                  <div key={m.id} className="flex items-center gap-1.5 bg-cinema-card rounded-full px-2.5 py-1">
+                    <div className="w-5 h-5 bg-cinema-accent rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
                       {m.username?.[0]?.toUpperCase()}
                     </div>
-                    <span className="text-cinema-text text-xs truncate">{m.username}</span>
-                    {m.id === socketRef.current?.id && <span className="text-cinema-muted text-xs">(you)</span>}
-                    {m.id === members[0]?.id && <span className="text-xs text-cinema-accent ml-auto">host</span>}
+                    <span className="text-cinema-text text-xs">{m.username}</span>
+                    {m.id === socketRef.current?.id && (
+                      <span className="text-cinema-muted text-xs">(you)</span>
+                    )}
                   </div>
                 ))}
+                {members.length === 0 && (
+                  <p className="text-cinema-muted text-xs">Waiting for others...</p>
+                )}
               </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
               {messages.length === 0 && (
-                <p className="text-cinema-muted text-xs text-center mt-6">No messages yet</p>
+                <p className="text-cinema-muted text-xs text-center mt-8">No messages yet — say hi!</p>
               )}
               {messages.map(msg => (
                 <div key={msg.id}>
                   {msg.system ? (
-                    <p className="text-cinema-muted text-xs text-center italic py-1">{msg.message}</p>
+                    <p className="text-cinema-muted text-xs text-center italic">{msg.message}</p>
                   ) : (
                     <div className={`flex flex-col ${msg.username === username ? 'items-end' : 'items-start'}`}>
                       <span className="text-cinema-muted text-xs mb-0.5">{msg.username}</span>
-                      <div className={`max-w-[90%] rounded-2xl px-3 py-2 text-sm break-words ${
+                      <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
                         msg.username === username
                           ? 'bg-cinema-accent text-white rounded-tr-sm'
                           : 'bg-cinema-card text-cinema-text rounded-tl-sm'
@@ -457,11 +456,14 @@ export default function WatchPartyPage() {
                 onChange={e => setChatInput(e.target.value)}
                 placeholder="Say something..."
                 maxLength={200}
-                className="flex-1 bg-cinema-card border border-cinema-border rounded-full px-3 py-2 text-xs text-cinema-text placeholder-cinema-muted outline-none focus:border-cinema-accent transition-colors"
+                className="flex-1 bg-cinema-card border border-cinema-border rounded-full px-3 py-2 text-sm text-cinema-text placeholder-cinema-muted outline-none focus:border-cinema-accent transition-colors"
               />
-              <button type="submit" disabled={!chatInput.trim()}
-                className="w-8 h-8 bg-cinema-accent hover:bg-red-700 disabled:opacity-40 rounded-full flex items-center justify-center transition-colors shrink-0">
-                <FiSend size={13} className="text-white" />
+              <button
+                type="submit"
+                disabled={!chatInput.trim()}
+                className="w-9 h-9 bg-cinema-accent hover:bg-red-700 disabled:opacity-40 rounded-full flex items-center justify-center transition-colors shrink-0"
+              >
+                <FiSend size={14} className="text-white" />
               </button>
             </form>
           </div>
