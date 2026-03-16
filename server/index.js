@@ -18,7 +18,6 @@ const adminRoutes     = require('./routes/admin');
 const scraperRoutes   = require('./routes/scraper');
 const tvRoutes        = require('./routes/tv');
 const tvScraperRoutes = require('./routes/tv-scraper');
-const streamRoutes    = require('./routes/stream');
 
 const app    = express();
 const server = http.createServer(app);
@@ -123,7 +122,6 @@ app.use('/api/admin',      adminRoutes);
 app.use('/api/scraper',    scraperRoutes);
 app.use('/api/tv',         tvRoutes);
 app.use('/api/tv-scraper', tvScraperRoutes);
-app.use('/api/stream',     streamRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'RoyalQueen API running', rooms: Object.keys(rooms).length });
@@ -152,7 +150,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/cinestrea
   .then(() => {
     console.log('✅ MongoDB connected');
     // KEY FIX: use server.listen not app.listen so Socket.io works
-    server.listen(PORT, () => {
+    server.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 RoyalQueen API + Socket.io on http://localhost:${PORT}`);
     });
   })
