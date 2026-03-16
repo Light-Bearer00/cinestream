@@ -14,7 +14,7 @@ import { movieApi, userApi } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import VideoPlayer from '../../components/player/VideoPlayer';
 import MovieCard from '../../components/cards/MovieCard';
-import { FiStar, FiClock, FiCalendar, FiHeart, FiPlay, FiGlobe, FiServer } from 'react-icons/fi';
+import { FiStar, FiClock, FiCalendar, FiHeart, FiPlay, FiGlobe, FiServer, FiUsers } from 'react-icons/fi';
 import AdBlockBanner from '../../components/ui/AdBlockBanner';
 import { saveMovieProgress, getMovieProgress } from '../../utils/watchProgress';
 
@@ -244,6 +244,17 @@ export default function MoviePage() {
                 }`}>
                 <FiHeart size={18} className={isFav ? 'fill-cinema-accent' : ''}/>
                 {isFav ? 'Favorited' : 'Favorite'}
+              </button>
+
+              <button
+                onClick={() => {
+                  const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+                  router.push(`/watch-party/${roomId}?movieId=${movie._id}`);
+                }}
+                className="flex items-center gap-2 px-6 py-3 rounded-full border border-cinema-border text-cinema-muted hover:border-purple-500 hover:text-purple-400 transition-all"
+              >
+                <FiUsers size={18} />
+                Watch Party
               </button>
             </div>
 
