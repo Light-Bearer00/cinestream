@@ -159,7 +159,7 @@ export default function Navbar() {
             <a
               href="https://github.com/Light-Bearer00/cinestream/releases/download/1.0/app-debug.apk"
               download
-              className="hidden sm:flex items-center gap-1.5 bg-cinema-card border border-cinema-border hover:border-cinema-accent text-cinema-muted hover:text-white text-xs px-3 py-1.5 rounded-full transition-all"
+              className="flex items-center gap-1.5 bg-cinema-card border border-cinema-border hover:border-cinema-accent text-cinema-muted hover:text-white text-xs px-3 py-1.5 rounded-full transition-all"
               title="Download Android App"
             >
               <FiDownload size={13} />
