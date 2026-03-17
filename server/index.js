@@ -109,7 +109,25 @@ io.on('connection', (socket) => {
 });
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000', credentials: true }));
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    const allowed = [
+      process.env.CLIENT_URL || 'http://localhost:3000',
+      'http://localhost:3000',
+      'https://cinestream-eta-gold.vercel.app',
+      'capacitor://localhost',
+      'http://localhost',
+      'ionic://localhost',
+    ];
+    if (allowed.some(a => origin.startsWith(a)) || origin.includes('vercel.app')) {
+      return callback(null, true);
+    }
+    return callback(null, true); // Allow all for now during development
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -150,7 +168,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/cinestrea
   .then(() => {
     console.log('✅ MongoDB connected');
     // KEY FIX: use server.listen not app.listen so Socket.io works
-    server.listen(PORT, "0.0.0.0", () => {
+    server.listen(PORT, () => {
       console.log(`🚀 RoyalQueen API + Socket.io on http://localhost:${PORT}`);
     });
   })

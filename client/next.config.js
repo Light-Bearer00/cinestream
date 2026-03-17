@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
   reactStrictMode: true,
   images: {
+    unoptimized: true,
     domains: [
       'upload.wikimedia.org',
       'image.tmdb.org',
@@ -19,3 +21,4 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
+
