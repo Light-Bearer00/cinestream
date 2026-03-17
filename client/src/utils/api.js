@@ -5,7 +5,7 @@
 
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = 'https://cinestream-production-7749.up.railway.app';
 
 // Create axios instance
 const api = axios.create({

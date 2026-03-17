@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../context/AuthContext';
 import {
-  FiSearch, FiX, FiUser, FiLogOut, FiSettings, FiHeart, FiMenu
+  FiSearch, FiX, FiUser, FiLogOut, FiSettings, FiHeart, FiMenu, FiDownload
 } from 'react-icons/fi';
 import { MdLocalMovies } from 'react-icons/md';
 
@@ -154,6 +154,17 @@ export default function Navbar() {
                 <FiUser size={14} /> Sign In
               </Link>
             )}
+
+            {/* Download App button */}
+            <a
+              href="https://github.com/Light-Bearer00/cinestream/releases/download/1.0/app-debug.apk"
+              download
+              className="hidden sm:flex items-center gap-1.5 bg-cinema-card border border-cinema-border hover:border-cinema-accent text-cinema-muted hover:text-white text-xs px-3 py-1.5 rounded-full transition-all"
+              title="Download Android App"
+            >
+              <FiDownload size={13} />
+              <span>App</span>
+            </a>
 
             {/* Mobile menu toggle */}
             <button

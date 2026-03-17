@@ -5,8 +5,10 @@ const config: CapacitorConfig = {
   appName: 'RoyalQueen',
   webDir: 'out',
   server: {
-    androidScheme: 'https',
-  },
+  androidScheme: 'https',
+  cleartext: true,
+  allowNavigation: ['cinestream-production-7749.up.railway.app']
+},
   android: {
     backgroundColor: '#0a0a0f',
   },
