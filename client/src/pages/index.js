@@ -186,8 +186,9 @@ function HeroCarousel({ movies }) {
                 </span>
               )}
               {showTrailer && (
-                <span className="text-xs bg-red-600/80 text-white px-2.5 py-1 rounded-full font-semibold animate-pulse">
-                  ▶ Trailer
+                <span className="flex items-center gap-1 text-xs bg-red-600/80 text-white px-2.5 py-1 rounded-full font-semibold animate-pulse">
+                  <FiPlay size={10} className="fill-white" />
+                  Trailer
                 </span>
               )}
             </div>
