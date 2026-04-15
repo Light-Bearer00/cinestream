@@ -10,11 +10,11 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
 import Link from 'next/link';
-import api, { movieApi, userApi } from '../../utils/api';
+import { movieApi, userApi } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import VideoPlayer from '../../components/player/VideoPlayer';
 import MovieCard from '../../components/cards/MovieCard';
-import { FiStar, FiClock, FiCalendar, FiHeart, FiPlay, FiGlobe, FiServer, FiUsers, FiDownload, FiX } from 'react-icons/fi';
+import { FiStar, FiClock, FiCalendar, FiHeart, FiPlay, FiGlobe, FiServer, FiUsers, FiDownload } from 'react-icons/fi';
 import AdBlockBanner from '../../components/ui/AdBlockBanner';
 import { saveMovieProgress, getMovieProgress } from '../../utils/watchProgress';
 
@@ -30,9 +30,7 @@ export default function MoviePage() {
   const [isFav,        setIsFav]        = useState(false);
   const [imgError,     setImgError]     = useState(false);
   const [resumeTime,   setResumeTime]   = useState(0);
-  const [showDownload, setShowDownload] = useState(false);
-  const [downloads,    setDownloads]    = useState([]);
-  const [dlLoading,    setDlLoading]    = useState(false);
+
 
   useEffect(() => {
     if (!id) return;
@@ -76,19 +74,11 @@ export default function MoviePage() {
     } catch (err) { console.error(err); }
   };
 
-  const fetchDownloads = async () => {
+  const fetchDownloads = () => {
     if (!movie) return;
-    setDlLoading(true);
-    setDownloads([]);
-    setShowDownload(true);
-    try {
-      const res = await api.get(`/movies/download/movie?title=${encodeURIComponent(movie.title)}&year=${movie.year}`);
-      setDownloads(res.data.torrents || []);
-    } catch (e) {
-      setDownloads([]);
-    } finally {
-      setDlLoading(false);
-    }
+    // Open YTS search directly - works on all devices
+    const ytsUrl = `https://yts.mx/movies/${movie.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${movie.year}`;
+    window.open(ytsUrl, '_blank');
   };
 
   function getStreamSources(movie) {
@@ -282,72 +272,7 @@ export default function MoviePage() {
               </button>
             </div>
 
-            {/* Download Panel */}
-            {showDownload && (
-              <div className="bg-cinema-card border border-cinema-border rounded-2xl p-5 animate-slide-up">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <FiDownload className="text-green-400" size={18} />
-                    <h3 className="text-white font-semibold">Download {movie.title}</h3>
-                  </div>
-                  <button onClick={() => setShowDownload(false)} className="text-cinema-muted hover:text-white transition-colors">
-                    <FiX size={18} />
-                  </button>
-                </div>
 
-                {dlLoading ? (
-                  <div className="flex items-center gap-3 py-4">
-                    <div className="w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
-                    <span className="text-cinema-muted text-sm">Searching for download links...</span>
-                  </div>
-                ) : downloads.length > 0 ? (
-                  <div className="space-y-3">
-                    <p className="text-cinema-muted text-xs mb-3">Choose your preferred quality:</p>
-                    {downloads.map((d, i) => (
-                      <a
-                        key={i}
-                        href={d.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between bg-cinema-dark border border-cinema-border hover:border-green-500 rounded-xl px-4 py-3 transition-all group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center justify-center shrink-0">
-                            <span className="text-green-400 text-sm font-bold">{d.quality}</span>
-                          </div>
-                          <div>
-                            <p className="text-cinema-text text-sm font-medium group-hover:text-white transition-colors">
-                              {d.quality} — {d.type?.toUpperCase()}
-                            </p>
-                            <p className="text-cinema-muted text-xs">{d.size} · {d.seeds} seeds</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-green-400">
-                          <FiDownload size={16} />
-                          <span className="text-xs font-medium hidden sm:block">Download</span>
-                        </div>
-                      </a>
-                    ))}
-                    <p className="text-cinema-muted text-xs mt-3 text-center">
-                      💡 Requires a torrent app — <strong>LibreTorrent</strong> on Android, <strong>qBittorrent</strong> on PC
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <FiDownload className="text-cinema-muted text-4xl mx-auto mb-3" />
-                    <p className="text-cinema-muted text-sm">No download links found for this movie.</p>
-                    <a
-                      href={`https://yts.mx/movies`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-cinema-accent hover:underline text-xs mt-1 inline-block"
-                    >
-                      Search on YTS.mx →
-                    </a>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Resume banner */}
             {!showPlayer && resumeTime > 0 && (

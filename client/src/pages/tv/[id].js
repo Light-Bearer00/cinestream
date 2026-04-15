@@ -8,13 +8,13 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
 import Link from 'next/link';
-import api, { tvApi } from '../../utils/api';
+import { tvApi } from '../../utils/api';
 import VideoPlayer from '../../components/player/VideoPlayer';
 import {
   saveEpisodeProgress, getEpisodeProgress,
   getShowLastWatched, formatTimeRemaining
 } from '../../utils/watchProgress';
-import { FiStar, FiCalendar, FiTv, FiPlay, FiChevronDown, FiChevronUp, FiGlobe, FiDownload, FiX } from 'react-icons/fi';
+import { FiStar, FiCalendar, FiTv, FiPlay, FiChevronDown, FiChevronUp, FiGlobe, FiDownload } from 'react-icons/fi';
 
 export default function TVShowPage() {
   const router = useRouter();
@@ -29,10 +29,7 @@ export default function TVShowPage() {
   const [expandedEps,    setExpandedEps]    = useState(false);
   const [imgError,       setImgError]       = useState(false);
   const [lastWatched,    setLastWatched]    = useState(null);
-  const [showDownload,   setShowDownload]   = useState(false);
-  const [downloads,      setDownloads]      = useState([]);
-  const [dlLoading,      setDlLoading]      = useState(false);
-  const [dlEpisode,      setDlEpisode]      = useState(null);
+
 
   useEffect(() => {
     if (!id) return;
@@ -87,21 +84,11 @@ export default function TVShowPage() {
     }, 100);
   };
 
-  const fetchEpisodeDownload = async (ep) => {
-    setDlEpisode(ep);
-    setDlLoading(true);
-    setDownloads([]);
-    setShowDownload(true);
-    try {
-      const imdbId = show?.imdbId || '';
-      if (!imdbId) { setDownloads([]); setDlLoading(false); return; }
-      const res = await api.get(`/movies/download/tv?imdb_id=${imdbId}&season=${selectedSeason}&episode=${ep.episodeNumber}`);
-      setDownloads(res.data.torrents || []);
-    } catch (e) {
-      setDownloads([]);
-    } finally {
-      setDlLoading(false);
-    }
+  const fetchEpisodeDownload = (ep) => {
+    const s = String(selectedSeason).padStart(2, '0');
+    const e = String(ep.episodeNumber).padStart(2, '0');
+    const query = encodeURIComponent(`${show.title} S${s}E${e}`);
+    window.open(`https://eztv.re/search/${encodeURIComponent(show.title)}`, '_blank');
   };
 
   const handleProgress = useCallback((currentTime, durationFromPlayer) => {
@@ -426,62 +413,7 @@ export default function TVShowPage() {
         </div>
       </div>
 
-      {/* Download Modal */}
-      {showDownload && dlEpisode && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowDownload(false)}>
-          <div className="bg-cinema-card border border-cinema-border rounded-2xl p-5 w-full max-w-md animate-slide-up" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <FiDownload className="text-green-400" size={18} />
-                <h3 className="text-white font-semibold text-sm">
-                  S{String(selectedSeason).padStart(2,'0')}E{String(dlEpisode.episodeNumber).padStart(2,'0')} — {dlEpisode.title}
-                </h3>
-              </div>
-              <button onClick={() => setShowDownload(false)} className="text-cinema-muted hover:text-white transition-colors">
-                <FiX size={18} />
-              </button>
-            </div>
 
-            {dlLoading ? (
-              <div className="flex items-center gap-3 py-6">
-                <div className="w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-cinema-muted text-sm">Searching for download links...</span>
-              </div>
-            ) : downloads.length > 0 ? (
-              <div className="space-y-2 max-h-72 overflow-y-auto">
-                {downloads.map((d, i) => (
-                  <a key={i} href={d.url} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center justify-between bg-cinema-dark border border-cinema-border hover:border-green-500 rounded-xl px-4 py-3 transition-all group">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center justify-center shrink-0">
-                        <span className="text-green-400 text-xs font-bold">{d.quality}</span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-cinema-text text-xs font-medium group-hover:text-white truncate">{d.title}</p>
-                        <p className="text-cinema-muted text-xs">{d.size} · {d.seeds} seeds</p>
-                      </div>
-                    </div>
-                    <FiDownload size={16} className="text-green-400 shrink-0 ml-2" />
-                  </a>
-                ))}
-                <p className="text-cinema-muted text-xs mt-2 text-center">
-                  💡 Requires a torrent app — <strong>LibreTorrent</strong> on Android
-                </p>
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <FiDownload className="text-cinema-muted text-4xl mx-auto mb-3" />
-                <p className="text-cinema-muted text-sm">No download links found.</p>
-                <a href={`https://eztv.re/search/${encodeURIComponent(show?.title || '')}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="text-cinema-accent hover:underline text-xs mt-1 inline-block">
-                  Search on EZTV.re →
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </>
   );
 }
