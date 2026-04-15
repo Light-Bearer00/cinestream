@@ -14,7 +14,7 @@ import { movieApi, userApi } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import VideoPlayer from '../../components/player/VideoPlayer';
 import MovieCard from '../../components/cards/MovieCard';
-import { FiStar, FiClock, FiCalendar, FiHeart, FiPlay, FiGlobe, FiServer, FiUsers } from 'react-icons/fi';
+import { FiStar, FiClock, FiCalendar, FiHeart, FiPlay, FiGlobe, FiServer, FiUsers, FiDownload, FiX } from 'react-icons/fi';
 import AdBlockBanner from '../../components/ui/AdBlockBanner';
 import { saveMovieProgress, getMovieProgress } from '../../utils/watchProgress';
 
@@ -23,13 +23,16 @@ export default function MoviePage() {
   const { id } = router.query;
   const { user } = useAuth();
 
-  const [movie,      setMovie]      = useState(null);
-  const [related,    setRelated]    = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [showPlayer, setShowPlayer] = useState(false);
-  const [isFav,      setIsFav]      = useState(false);
-  const [imgError,   setImgError]   = useState(false);
-  const [resumeTime,  setResumeTime]  = useState(0);
+  const [movie,        setMovie]        = useState(null);
+  const [related,      setRelated]      = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [showPlayer,   setShowPlayer]   = useState(false);
+  const [isFav,        setIsFav]        = useState(false);
+  const [imgError,     setImgError]     = useState(false);
+  const [resumeTime,   setResumeTime]   = useState(0);
+  const [showDownload, setShowDownload] = useState(false);
+  const [downloads,    setDownloads]    = useState([]);
+  const [dlLoading,    setDlLoading]    = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -44,7 +47,6 @@ export default function MoviePage() {
         ]);
         setMovie(movieRes.data);
         setRelated(relatedRes.data);
-        // Load saved progress for resume
         const saved = getMovieProgress(id);
         if (saved && saved.percent >= 2 && saved.percent < 95) {
           setResumeTime(saved.currentTime);
@@ -74,7 +76,35 @@ export default function MoviePage() {
     } catch (err) { console.error(err); }
   };
 
-  // Build stream sources from whatever the movie has stored
+  const fetchDownloads = async () => {
+    if (!movie) return;
+    setDlLoading(true);
+    setDownloads([]);
+    setShowDownload(true);
+    try {
+      const query = encodeURIComponent(movie.title);
+      const res = await fetch(`https://yts.mx/api/v2/list_movies.json?query_term=${query}&limit=5`);
+      const data = await res.json();
+      const movies = data.data?.movies || [];
+      const match = movies.find(m => m.year === movie.year) || movies[0];
+      if (match?.torrents?.length > 0) {
+        setDownloads(match.torrents.map(t => ({
+          quality: t.quality,
+          size: t.size,
+          type: t.type,
+          seeds: t.seeds,
+          url: t.url,
+        })));
+      } else {
+        setDownloads([]);
+      }
+    } catch (e) {
+      setDownloads([]);
+    } finally {
+      setDlLoading(false);
+    }
+  };
+
   function getStreamSources(movie) {
     if (movie.streamSources?.length > 0) return movie.streamSources;
     if (movie.streamUrl) {
@@ -89,7 +119,6 @@ export default function MoviePage() {
     return [];
   }
 
-  // Called by VideoPlayer every 5 seconds
   const handleProgress = (currentTime, duration) => {
     if (!movie || !currentTime) return;
     const realDuration = duration > 0 ? duration
@@ -131,7 +160,7 @@ export default function MoviePage() {
   return (
     <>
       <Head>
-        <title>{movie.title} — CineStream</title>
+        <title>{movie.title} — RoyalQueen</title>
         <meta name="description" content={movie.description} />
       </Head>
 
@@ -237,6 +266,7 @@ export default function MoviePage() {
                   <FiPlay size={18}/> No Stream Available
                 </div>
               )}
+
               <button onClick={handleToggleFav}
                 className={`flex items-center gap-2 px-6 py-3 rounded-full border transition-all ${
                   isFav ? 'bg-cinema-accent/20 border-cinema-accent text-cinema-accent'
@@ -256,7 +286,82 @@ export default function MoviePage() {
                 <FiUsers size={18} />
                 Watch Party
               </button>
+
+              <button
+                onClick={fetchDownloads}
+                className="flex items-center gap-2 px-6 py-3 rounded-full border border-cinema-border text-cinema-muted hover:border-green-500 hover:text-green-400 transition-all"
+              >
+                <FiDownload size={18} />
+                Download
+              </button>
             </div>
+
+            {/* Download Panel */}
+            {showDownload && (
+              <div className="bg-cinema-card border border-cinema-border rounded-2xl p-5 animate-slide-up">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <FiDownload className="text-green-400" size={18} />
+                    <h3 className="text-white font-semibold">Download {movie.title}</h3>
+                  </div>
+                  <button onClick={() => setShowDownload(false)} className="text-cinema-muted hover:text-white transition-colors">
+                    <FiX size={18} />
+                  </button>
+                </div>
+
+                {dlLoading ? (
+                  <div className="flex items-center gap-3 py-4">
+                    <div className="w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-cinema-muted text-sm">Searching for download links...</span>
+                  </div>
+                ) : downloads.length > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-cinema-muted text-xs mb-3">Choose your preferred quality:</p>
+                    {downloads.map((d, i) => (
+                      <a
+                        key={i}
+                        href={d.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between bg-cinema-dark border border-cinema-border hover:border-green-500 rounded-xl px-4 py-3 transition-all group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center justify-center shrink-0">
+                            <span className="text-green-400 text-sm font-bold">{d.quality}</span>
+                          </div>
+                          <div>
+                            <p className="text-cinema-text text-sm font-medium group-hover:text-white transition-colors">
+                              {d.quality} — {d.type?.toUpperCase()}
+                            </p>
+                            <p className="text-cinema-muted text-xs">{d.size} · {d.seeds} seeds</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-green-400">
+                          <FiDownload size={16} />
+                          <span className="text-xs font-medium hidden sm:block">Download</span>
+                        </div>
+                      </a>
+                    ))}
+                    <p className="text-cinema-muted text-xs mt-3 text-center">
+                      💡 Requires a torrent app — <strong>LibreTorrent</strong> on Android, <strong>qBittorrent</strong> on PC
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <FiDownload className="text-cinema-muted text-4xl mx-auto mb-3" />
+                    <p className="text-cinema-muted text-sm">No download links found for this movie.</p>
+                    <a
+                      href={`https://yts.mx/movies`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-cinema-accent hover:underline text-xs mt-1 inline-block"
+                    >
+                      Search on YTS.mx →
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Resume banner */}
             {!showPlayer && resumeTime > 0 && (
@@ -296,7 +401,7 @@ export default function MoviePage() {
                   ))}
                 </div>
                 <p className="text-cinema-muted text-xs mt-2">
-                  💡 If one server doesn't work, switch source. Space = play/pause · F = fullscreen · M = mute · ←→ = seek
+                  💡 If one server does not work, switch source. Space = play/pause · F = fullscreen · M = mute
                 </p>
                 <AdBlockBanner />
               </div>
