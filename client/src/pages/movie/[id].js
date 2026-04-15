@@ -10,7 +10,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
 import Link from 'next/link';
-import { movieApi, userApi } from '../../utils/api';
+import api, { movieApi, userApi } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import VideoPlayer from '../../components/player/VideoPlayer';
 import MovieCard from '../../components/cards/MovieCard';
@@ -82,22 +82,8 @@ export default function MoviePage() {
     setDownloads([]);
     setShowDownload(true);
     try {
-      const query = encodeURIComponent(movie.title);
-      const res = await fetch(`https://yts.mx/api/v2/list_movies.json?query_term=${query}&limit=5`);
-      const data = await res.json();
-      const movies = data.data?.movies || [];
-      const match = movies.find(m => m.year === movie.year) || movies[0];
-      if (match?.torrents?.length > 0) {
-        setDownloads(match.torrents.map(t => ({
-          quality: t.quality,
-          size: t.size,
-          type: t.type,
-          seeds: t.seeds,
-          url: t.url,
-        })));
-      } else {
-        setDownloads([]);
-      }
+      const res = await api.get(`/movies/download/movie?title=${encodeURIComponent(movie.title)}&year=${movie.year}`);
+      setDownloads(res.data.torrents || []);
     } catch (e) {
       setDownloads([]);
     } finally {

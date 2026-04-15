@@ -8,7 +8,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
 import Link from 'next/link';
-import { tvApi } from '../../utils/api';
+import api, { tvApi } from '../../utils/api';
 import VideoPlayer from '../../components/player/VideoPlayer';
 import {
   saveEpisodeProgress, getEpisodeProgress,
@@ -93,22 +93,10 @@ export default function TVShowPage() {
     setDownloads([]);
     setShowDownload(true);
     try {
-      const imdbNum = show?.imdbId?.replace('tt', '') || '';
-      if (!imdbNum) { setDownloads([]); setDlLoading(false); return; }
-      const res = await fetch(`https://eztv.re/api/get-torrents?imdb_id=${imdbNum}&limit=20`);
-      const data = await res.json();
-      const torrents = data.torrents || [];
-      const s = String(selectedSeason).padStart(2, '0');
-      const e = String(ep.episodeNumber).padStart(2, '0');
-      const epStr = `S${s}E${e}`;
-      const matches = torrents.filter(t => t.title?.toUpperCase().includes(epStr));
-      setDownloads(matches.map(t => ({
-        quality: t.title?.match(/\d{3,4}p/i)?.[0] || 'HD',
-        size: t.size_bytes ? (t.size_bytes / 1024 / 1024 / 1024).toFixed(2) + ' GB' : '?',
-        seeds: t.seeds || 0,
-        url: t.torrent_url,
-        title: t.title,
-      })));
+      const imdbId = show?.imdbId || '';
+      if (!imdbId) { setDownloads([]); setDlLoading(false); return; }
+      const res = await api.get(`/movies/download/tv?imdb_id=${imdbId}&season=${selectedSeason}&episode=${ep.episodeNumber}`);
+      setDownloads(res.data.torrents || []);
     } catch (e) {
       setDownloads([]);
     } finally {
