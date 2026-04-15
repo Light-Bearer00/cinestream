@@ -81,11 +81,29 @@ export default function MoviePage() {
     setShowDownload(true);
   };
 
-  const downloadLinks = movie ? [
-    { quality: '4K', label: '2160p', icon: '🎬', color: 'from-purple-600 to-purple-800', url: `https://yts.mx/movies/${(movie.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${movie.year}` },
-    { quality: '1080p', label: 'Full HD', icon: '🎥', color: 'from-green-600 to-green-800', url: `https://yts.mx/movies/${(movie.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${movie.year}` },
-    { quality: '720p', label: 'HD', icon: '📺', color: 'from-blue-600 to-blue-800', url: `https://yts.mx/movies/${(movie.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${movie.year}` },
-  ] : [];
+  // Get imdbId from stream sources URL or movie object
+  const getImdbId = () => {
+    if (movie?.imdbId) return movie.imdbId;
+    // Try to extract from embed.su source URL
+    const embedSu = movie?.streamSources?.find(s => s.url?.includes('embed.su'));
+    if (embedSu) {
+      const match = embedSu.url.match(/tt\d+/);
+      if (match) return match[0];
+    }
+    return null;
+  };
+
+  const downloadLinks = movie ? (() => {
+    const imdbId = getImdbId();
+    const baseUrl = imdbId
+      ? `https://dl.vidsrc.vip/movie/${imdbId}`
+      : `https://www.google.com/search?q=${encodeURIComponent(movie.title + ' ' + movie.year + ' download mp4')}`;
+    return [
+      { quality: '1080p', label: 'Full HD', icon: '🎥', color: 'from-green-600 to-green-800', url: baseUrl },
+      { quality: '720p',  label: 'HD',      icon: '📺', color: 'from-blue-600 to-blue-800',  url: baseUrl },
+      { quality: '480p',  label: 'SD',      icon: '🎞️', color: 'from-gray-600 to-gray-800',  url: baseUrl },
+    ];
+  })() : [];
 
   function getStreamSources(movie) {
     if (movie.streamSources?.length > 0) return movie.streamSources;
@@ -307,7 +325,7 @@ export default function MoviePage() {
                 </div>
                 <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2">
                   <FiSmartphone size={14} className="text-green-400 shrink-0" />
-                  <p className="text-green-400 text-xs">Works on mobile — opens YTS download page with direct MP4 links</p>
+                  <p className="text-green-400 text-xs">Works on mobile — tap quality to open download page</p>
                 </div>
               </div>
             )}

@@ -436,11 +436,14 @@ export default function TVShowPage() {
                 { quality: '720p',  label: 'HD',      icon: '📺', color: 'from-blue-600 to-blue-800'  },
                 { quality: '480p',  label: 'SD',      icon: '🎞️', color: 'from-gray-600 to-gray-800'  },
               ].map((d, i) => {
-                const s = String(selectedSeason).padStart(2,'0');
-                const e = String(dlEpisode.episodeNumber).padStart(2,'0');
-                const q = encodeURIComponent(`${show?.title} S${s}E${e} ${d.quality}`);
+                const sNum = selectedSeason;
+                const eNum = dlEpisode.episodeNumber;
+                const imdbId = show?.imdbId || '';
+                const dlUrl = imdbId
+                  ? `https://dl.vidsrc.vip/tv/${imdbId}/${sNum}/${eNum}`
+                  : `https://www.google.com/search?q=${encodeURIComponent((show?.title || '') + ' S' + String(sNum).padStart(2,'0') + 'E' + String(eNum).padStart(2,'0') + ' download')}`;
                 return (
-                  <a key={i} href={`https://www.1337x.to/search/${q}/1/`} target="_blank" rel="noopener noreferrer"
+                  <a key={i} href={dlUrl} target="_blank" rel="noopener noreferrer"
                     className="flex flex-col items-center gap-2 p-4 rounded-xl bg-cinema-dark border border-cinema-border hover:border-green-500 transition-all group">
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${d.color} flex items-center justify-center text-xl shadow-lg group-hover:scale-110 transition-transform`}>
                       {d.icon}
