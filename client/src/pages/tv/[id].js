@@ -414,55 +414,6 @@ export default function TVShowPage() {
           </div>
         </div>
       </div>
-
-
-      {/* Download Modal */}
-      {showDownload && dlEpisode && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowDownload(false)}>
-          <div className="bg-cinema-card border border-green-500/30 rounded-2xl p-5 w-full max-w-md animate-slide-up" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <FiDownload className="text-green-400" size={18} />
-                <h3 className="text-white font-semibold text-sm">
-                  {show?.title} — S{String(selectedSeason).padStart(2,'0')}E{String(dlEpisode.episodeNumber).padStart(2,'0')}
-                </h3>
-              </div>
-              <button onClick={() => setShowDownload(false)} className="text-cinema-muted hover:text-white transition-colors">
-                <FiX size={18} />
-              </button>
-            </div>
-            <p className="text-cinema-muted text-xs mb-4">{dlEpisode.title}</p>
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              {[
-                { quality: '1080p', label: 'Full HD', icon: '🎥', color: 'from-green-600 to-green-800' },
-                { quality: '720p',  label: 'HD',      icon: '📺', color: 'from-blue-600 to-blue-800'  },
-                { quality: '480p',  label: 'SD',      icon: '🎞️', color: 'from-gray-600 to-gray-800'  },
-              ].map((d, i) => {
-                const sNum = selectedSeason;
-                const eNum = dlEpisode.episodeNumber;
-                const imdbId = show?.imdbId || '';
-                const dlUrl = imdbId
-                  ? `https://dl.vidsrc.vip/tv/${imdbId}/${sNum}/${eNum}`
-                  : `https://www.google.com/search?q=${encodeURIComponent((show?.title || '') + ' S' + String(sNum).padStart(2,'0') + 'E' + String(eNum).padStart(2,'0') + ' download')}`;
-                return (
-                  <a key={i} href={dlUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-cinema-dark border border-cinema-border hover:border-green-500 transition-all group">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${d.color} flex items-center justify-center text-xl shadow-lg group-hover:scale-110 transition-transform`}>
-                      {d.icon}
-                    </div>
-                    <span className="text-white text-sm font-bold">{d.quality}</span>
-                    <span className="text-cinema-muted text-xs">{d.label}</span>
-                  </a>
-                );
-              })}
-            </div>
-            <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2">
-              <FiSmartphone size={14} className="text-green-400 shrink-0" />
-              <p className="text-green-400 text-xs">Opens search results — pick your preferred download</p>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
