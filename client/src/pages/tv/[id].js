@@ -14,7 +14,7 @@ import {
   saveEpisodeProgress, getEpisodeProgress,
   getShowLastWatched, formatTimeRemaining
 } from '../../utils/watchProgress';
-import { FiStar, FiCalendar, FiTv, FiPlay, FiChevronDown, FiChevronUp, FiGlobe } from 'react-icons/fi';
+import { FiStar, FiCalendar, FiTv, FiPlay, FiChevronDown, FiChevronUp, FiGlobe, FiDownload, FiX } from 'react-icons/fi';
 
 export default function TVShowPage() {
   const router = useRouter();
@@ -27,6 +27,10 @@ export default function TVShowPage() {
   const [seasonLoading,  setSeasonLoading]  = useState(false);
   const [playingEp,      setPlayingEp]      = useState(null);
   const [expandedEps,    setExpandedEps]    = useState(false);
+  const [showDownload,   setShowDownload]   = useState(false);
+  const [downloads,      setDownloads]      = useState([]);
+  const [dlLoading,      setDlLoading]      = useState(false);
+  const [dlEpisode,      setDlEpisode]      = useState(null);
   const [imgError,       setImgError]       = useState(false);
   const [lastWatched,    setLastWatched]    = useState(null);
 
@@ -107,6 +111,30 @@ export default function TVShowPage() {
       }
     );
   }, [id, show, playingEp, seasonData]);
+
+  const fetchEpisodeDownload = async (ep) => {
+    setDlEpisode(ep);
+    setDlLoading(true);
+    setDownloads([]);
+    setShowDownload(true);
+    try {
+      const imdbNum = show?.imdbId?.replace('tt', '') || '';
+      if (!imdbNum) { setDownloads([]); setDlLoading(false); return; }
+      const res = await fetch(`https://eztv.re/api/get-torrents?imdb_id=${imdbNum}&limit=20`);
+      const data = await res.json();
+      const torrents = data.torrents || [];
+      const epStr = `S${String(selectedSeason).padStart(2,'0')}E${String(ep.episodeNumber).padStart(2,'0')}`;
+      const matches = torrents.filter(t => t.title?.toUpperCase().includes(epStr));
+      setDownloads(matches.map(t => ({
+        quality: t.title?.match(/\d{3,4}p/i)?.[0] || 'HD',
+        size: t.size_bytes ? (t.size_bytes / 1024 / 1024 / 1024).toFixed(2) + ' GB' : '?',
+        seeds: t.seeds || 0,
+        url: t.torrent_url,
+        title: t.title,
+      })));
+    } catch (e) { setDownloads([]); }
+    finally { setDlLoading(false); }
+  };
 
   if (loading) {
     return (
@@ -360,12 +388,21 @@ export default function TVShowPage() {
                             )}
                           </div>
 
-                          <FiPlay
-                            className={`shrink-0 transition-colors ${
-                              isPlaying ? 'text-cinema-accent fill-cinema-accent' : 'text-cinema-muted group-hover:text-white'
-                            }`}
-                            size={16}
-                          />
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={e => { e.stopPropagation(); fetchEpisodeDownload(ep); }}
+                              className="p-1.5 rounded-lg text-cinema-muted hover:text-green-400 hover:bg-green-400/10 transition-all"
+                              title="Download episode"
+                            >
+                              <FiDownload size={14} />
+                            </button>
+                            <FiPlay
+                              className={`transition-colors ${
+                                isPlaying ? 'text-cinema-accent fill-cinema-accent' : 'text-cinema-muted group-hover:text-white'
+                              }`}
+                              size={16}
+                            />
+                          </div>
                         </div>
                       );
                     })}
@@ -415,6 +452,59 @@ export default function TVShowPage() {
           </div>
         </div>
       </div>
+      {/* Download Modal */}
+      {showDownload && dlEpisode && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowDownload(false)}>
+          <div className="bg-cinema-card border border-cinema-border rounded-2xl p-5 w-full max-w-md animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <FiDownload className="text-green-400" size={18} />
+                <h3 className="text-white font-semibold text-sm">
+                  S{String(selectedSeason).padStart(2,'0')}E{String(dlEpisode.episodeNumber).padStart(2,'0')} — {dlEpisode.title}
+                </h3>
+              </div>
+              <button onClick={() => setShowDownload(false)} className="text-cinema-muted hover:text-white transition-colors">
+                <FiX size={18} />
+              </button>
+            </div>
+            {dlLoading ? (
+              <div className="flex items-center gap-3 py-6">
+                <div className="w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+                <span className="text-cinema-muted text-sm">Searching for download links...</span>
+              </div>
+            ) : downloads.length > 0 ? (
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {downloads.map((d, i) => (
+                  <a key={i} href={d.url} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center justify-between bg-cinema-dark border border-cinema-border hover:border-green-500 rounded-xl px-4 py-3 transition-all group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center justify-center shrink-0">
+                        <span className="text-green-400 text-xs font-bold">{d.quality}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-cinema-text text-xs font-medium group-hover:text-white truncate">{d.title}</p>
+                        <p className="text-cinema-muted text-xs">{d.size} · {d.seeds} seeds</p>
+                      </div>
+                    </div>
+                    <FiDownload size={16} className="text-green-400 shrink-0 ml-2" />
+                  </a>
+                ))}
+                <p className="text-cinema-muted text-xs mt-2 text-center">💡 Requires a torrent app (LibreTorrent on Android)</p>
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <FiDownload className="text-cinema-muted text-4xl mx-auto mb-3" />
+                <p className="text-cinema-muted text-sm">No download links found.</p>
+                <a href={`https://eztv.re/search/${encodeURIComponent(show?.title || '')}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="text-cinema-accent hover:underline text-xs mt-1 inline-block">
+                  Search on EZTV.re →
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
