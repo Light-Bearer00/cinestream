@@ -14,7 +14,7 @@ import { movieApi, userApi } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import VideoPlayer from '../../components/player/VideoPlayer';
 import MovieCard from '../../components/cards/MovieCard';
-import { FiStar, FiClock, FiCalendar, FiHeart, FiPlay, FiGlobe, FiServer, FiUsers, FiDownload, FiX, FiSmartphone } from 'react-icons/fi';
+import { FiStar, FiClock, FiCalendar, FiHeart, FiPlay, FiGlobe, FiServer, FiUsers, FiDownload } from 'react-icons/fi';
 import AdBlockBanner from '../../components/ui/AdBlockBanner';
 import { saveMovieProgress, getMovieProgress } from '../../utils/watchProgress';
 
@@ -74,36 +74,20 @@ export default function MoviePage() {
     } catch (err) { console.error(err); }
   };
 
-  const [showDownload, setShowDownload] = useState(false);
-
   const fetchDownloads = () => {
     if (!movie) return;
-    setShowDownload(true);
+    window.open(getDownloadUrl(), '_blank');
   };
 
-  // Get imdbId from stream sources URL or movie object
-  const getImdbId = () => {
-    if (movie?.imdbId) return movie.imdbId;
-    // Try to extract from embed.su source URL
+  const getDownloadUrl = () => {
+    if (movie?.imdbId) return `https://dl.vidsrc.vip/movie/${movie.imdbId}`;
     const embedSu = movie?.streamSources?.find(s => s.url?.includes('embed.su'));
     if (embedSu) {
       const match = embedSu.url.match(/tt\d+/);
-      if (match) return match[0];
+      if (match) return `https://dl.vidsrc.vip/movie/${match[0]}`;
     }
-    return null;
+    return `https://www.google.com/search?q=${encodeURIComponent((movie?.title || '') + ' ' + (movie?.year || '') + ' download mp4')}`;
   };
-
-  const downloadLinks = movie ? (() => {
-    const imdbId = getImdbId();
-    const baseUrl = imdbId
-      ? `https://dl.vidsrc.vip/movie/${imdbId}`
-      : `https://www.google.com/search?q=${encodeURIComponent(movie.title + ' ' + movie.year + ' download mp4')}`;
-    return [
-      { quality: '1080p', label: 'Full HD', icon: '🎥', color: 'from-green-600 to-green-800', url: baseUrl },
-      { quality: '720p',  label: 'HD',      icon: '📺', color: 'from-blue-600 to-blue-800',  url: baseUrl },
-      { quality: '480p',  label: 'SD',      icon: '🎞️', color: 'from-gray-600 to-gray-800',  url: baseUrl },
-    ];
-  })() : [];
 
   function getStreamSources(movie) {
     if (movie.streamSources?.length > 0) return movie.streamSources;
@@ -298,37 +282,7 @@ export default function MoviePage() {
 
 
 
-            {/* Download Modal */}
-            {showDownload && (
-              <div className="bg-cinema-card border border-green-500/30 rounded-2xl p-5 animate-slide-up">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <FiDownload className="text-green-400" size={18} />
-                    <h3 className="text-white font-semibold">Download {movie.title}</h3>
-                  </div>
-                  <button onClick={() => setShowDownload(false)} className="text-cinema-muted hover:text-white transition-colors">
-                    <FiX size={18} />
-                  </button>
-                </div>
-                <p className="text-cinema-muted text-xs mb-4">Select quality — opens download page in new tab</p>
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  {downloadLinks.map((d, i) => (
-                    <a key={i} href={d.url} target="_blank" rel="noopener noreferrer"
-                      className="flex flex-col items-center gap-2 p-4 rounded-xl bg-cinema-dark border border-cinema-border hover:border-green-500 transition-all group">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${d.color} flex items-center justify-center text-xl shadow-lg group-hover:scale-110 transition-transform`}>
-                        {d.icon}
-                      </div>
-                      <span className="text-white text-sm font-bold">{d.quality}</span>
-                      <span className="text-cinema-muted text-xs">{d.label}</span>
-                    </a>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2">
-                  <FiSmartphone size={14} className="text-green-400 shrink-0" />
-                  <p className="text-green-400 text-xs">Works on mobile — tap quality to open download page</p>
-                </div>
-              </div>
-            )}
+
 
             {/* Resume banner */}
             {!showPlayer && resumeTime > 0 && (

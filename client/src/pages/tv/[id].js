@@ -14,7 +14,7 @@ import {
   saveEpisodeProgress, getEpisodeProgress,
   getShowLastWatched, formatTimeRemaining
 } from '../../utils/watchProgress';
-import { FiStar, FiCalendar, FiTv, FiPlay, FiChevronDown, FiChevronUp, FiGlobe, FiDownload, FiX, FiSmartphone } from 'react-icons/fi';
+import { FiStar, FiCalendar, FiTv, FiPlay, FiChevronDown, FiChevronUp, FiGlobe, FiDownload } from 'react-icons/fi';
 
 export default function TVShowPage() {
   const router = useRouter();
@@ -28,8 +28,7 @@ export default function TVShowPage() {
   const [playingEp,      setPlayingEp]      = useState(null);
   const [expandedEps,    setExpandedEps]    = useState(false);
   const [imgError,       setImgError]       = useState(false);
-  const [showDownload,   setShowDownload]   = useState(false);
-  const [dlEpisode,      setDlEpisode]      = useState(null);
+
   const [lastWatched,    setLastWatched]    = useState(null);
 
 
@@ -87,8 +86,11 @@ export default function TVShowPage() {
   };
 
   const fetchEpisodeDownload = (ep) => {
-    setDlEpisode(ep);
-    setShowDownload(true);
+    const imdbId = show?.imdbId || '';
+    const url = imdbId
+      ? `https://dl.vidsrc.vip/tv/${imdbId}/${selectedSeason}/${ep.episodeNumber}`
+      : `https://www.google.com/search?q=${encodeURIComponent((show?.title || '') + ' S' + String(selectedSeason).padStart(2,'0') + 'E' + String(ep.episodeNumber).padStart(2,'0') + ' download')}`;
+    window.open(url, '_blank');
   };
 
   const handleProgress = useCallback((currentTime, durationFromPlayer) => {
