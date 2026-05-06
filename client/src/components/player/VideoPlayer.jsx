@@ -279,11 +279,11 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
               src={activeUrl}
               className="w-full h-full border-0"
               allowFullScreen
-              allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-              referrerPolicy="origin"
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media; scripts; same-origin"
+              referrerPolicy="no-referrer-when-downgrade"
               scrolling="no"
               title={title}
-              
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-pointer-lock"
               onError={() => setIframeError(true)}
             />
 

@@ -59,7 +59,7 @@ function mapTmdbMovie(m, details = null) {
     duration:    details?.runtime || 0,
     director:    details?.credits?.crew?.find(c => c.job === 'Director')?.name || '',
     cast:        (details?.credits?.cast || []).slice(0, 6).map(c => c.name),
-    language:    m.original_language === 'en' ? 'English' : (m.original_language || 'English'),
+    language:    m.original_language === 'en' ? 'English' : m.original_language === 'ja' ? 'Japanese' : m.original_language === 'ko' ? 'Korean' : m.original_language === 'fr' ? 'French' : m.original_language === 'es' ? 'Spanish' : m.original_language === 'de' ? 'German' : m.original_language === 'ar' ? 'Arabic' : 'English',
   };
 }
 
@@ -75,23 +75,26 @@ const GENRE_MAP = {
 function buildStreamSources(tmdbId, imdbId) {
   const sources = [];
 
-  // Server 1: autoembed.co
-  if (tmdbId) sources.push({ provider:'vidstream', label:'Server 1', url:`https://autoembed.co/movie/tmdb/${tmdbId}`, quality:'auto', isHLS:false });
+  // Server 1: vsembed.su (main)
+  if (tmdbId) sources.push({ provider:'upcloud', label:'Server 1', url:`https://vsembed.su/embed/movie?tmdb=${tmdbId}`, quality:'auto', isHLS:false });
 
-  // Server 2: vidsrc.xyz
-  if (tmdbId) sources.push({ provider:'upcloud', label:'Server 2', url:`https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`, quality:'auto', isHLS:false });
+  // Server 2: embed.su
+  if (imdbId) sources.push({ provider:'filemoon', label:'Server 2', url:`https://embed.su/embed/movie/${imdbId}`, quality:'auto', isHLS:false });
 
-  // Server 3: embed.su
-  if (imdbId) sources.push({ provider:'filemoon', label:'Server 3', url:`https://embed.su/embed/movie/${imdbId}`, quality:'auto', isHLS:false });
+  // Server 3: moviesapi.club
+  if (tmdbId) sources.push({ provider:'streamtape', label:'Server 3', url:`https://moviesapi.club/movie/${tmdbId}`, quality:'auto', isHLS:false });
 
-  // Server 4: moviesapi.club
-  if (tmdbId) sources.push({ provider:'streamtape', label:'Server 4', url:`https://moviesapi.club/movie/${tmdbId}`, quality:'auto', isHLS:false });
+  // Server 4: 2embed.cc
+  if (imdbId) sources.push({ provider:'doodstream', label:'Server 4', url:`https://www.2embed.cc/embed/${imdbId}`, quality:'auto', isHLS:false });
 
-  // Server 5: 2embed.cc
-  if (imdbId) sources.push({ provider:'doodstream', label:'Server 5', url:`https://www.2embed.cc/embed/${imdbId}`, quality:'auto', isHLS:false });
+  // Server 5: embedrise
+  if (tmdbId) sources.push({ provider:'mixdrop', label:'Server 5', url:`https://embedrise.com/movie/${tmdbId}`, quality:'auto', isHLS:false });
 
-  // Server 6: embedrise
-  if (tmdbId) sources.push({ provider:'mixdrop', label:'Server 6', url:`https://embedrise.com/movie/${tmdbId}`, quality:'auto', isHLS:false });
+  // Server 6: autoembed.co
+  if (tmdbId) sources.push({ provider:'vidstream', label:'Server 6', url:`https://autoembed.co/movie/tmdb/${tmdbId}`, quality:'auto', isHLS:false });
+
+  // Server 7: aniwave (good for anime)
+  if (tmdbId) sources.push({ provider:'aniwave', label:'Server 7', url:`https://aniwatchtv.to/movie/${tmdbId}`, quality:'auto', isHLS:false });
 
   return sources;
 }
@@ -207,7 +210,7 @@ router.post('/import', async (req, res) => {
           duration:      m.duration || 0,
           director:      m.director || '',
           cast:          m.cast || [],
-          language:      m.language || 'English',
+          language:      'English', // normalize to avoid validation errors
           streamUrl:     m.streamUrl || m.primaryStreamUrl || (m.streamSources?.[0]?.url || ''),
           streamSources: (m.streamSources || []).map(s => ({
             provider: s.provider || 'direct',
@@ -254,6 +257,48 @@ router.delete('/delete-all', async (req, res) => {
 ══════════════════════════════════════════════════════════════════════════════ */
 router.get('/genres', async (req, res) => {
   res.json(Object.entries(GENRE_MAP).map(([id, name]) => ({ id: Number(id), name })));
+});
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   POST /api/scraper/fix-urls
+   Updates all movies in DB with new stream URLs based on their tmdbId
+══════════════════════════════════════════════════════════════════════════════ */
+router.post('/fix-urls', async (req, res) => {
+  try {
+    const movies = await Movie.find({ isPublished: true });
+    let updated = 0;
+
+    for (const movie of movies) {
+      if (!movie.tmdbId && !movie.streamSources?.length) continue;
+
+      // Get tmdbId and imdbId from existing stream sources
+      const tmdbId = movie.tmdbId;
+      const imdbUrl = movie.streamSources?.find(s => s.url?.includes('embed.su') || s.url?.includes('2embed'));
+      const imdbId = imdbUrl?.url?.match(/tt\d+/)?.[0] || '';
+
+      if (!tmdbId) continue;
+
+      const newSources = [
+        { provider: 'upcloud',     label: 'Server 1', url: `https://vsembed.su/embed/movie?tmdb=${tmdbId}`,    quality: 'auto', isHLS: false },
+        { provider: 'filemoon',    label: 'Server 2', url: imdbId ? `https://embed.su/embed/movie/${imdbId}` : `https://vsembed.su/embed/movie?tmdb=${tmdbId}`, quality: 'auto', isHLS: false },
+        { provider: 'streamtape',  label: 'Server 3', url: `https://moviesapi.club/movie/${tmdbId}`,           quality: 'auto', isHLS: false },
+        { provider: 'doodstream',  label: 'Server 4', url: imdbId ? `https://www.2embed.cc/embed/${imdbId}` : `https://vsembed.su/embed/movie?tmdb=${tmdbId}`, quality: 'auto', isHLS: false },
+        { provider: 'mixdrop',     label: 'Server 5', url: `https://embedrise.com/movie/${tmdbId}`,            quality: 'auto', isHLS: false },
+        { provider: 'vidstream',   label: 'Server 6', url: `https://autoembed.co/movie/tmdb/${tmdbId}`,        quality: 'auto', isHLS: false },
+      ];
+
+      await Movie.findByIdAndUpdate(movie._id, {
+        streamSources: newSources,
+        streamUrl: newSources[0].url,
+      });
+      updated++;
+    }
+
+    res.json({ message: `Updated ${updated} movies with new stream URLs.`, updated });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 module.exports = router;
