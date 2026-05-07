@@ -27,11 +27,6 @@ function getUrlType(url) {
     url.includes('vidsrc.in')        ||
     url.includes('vidsrc.pm')        ||
     url.includes('vidsrc.xyz')       ||
-    url.includes('vsembed.su')        ||
-    url.includes('vsembed.ru')        ||
-    url.includes('godriveplayer')     ||
-    url.includes('vidlink.pro')       ||
-    url.includes('multiembed.mov')    ||
     url.includes('vidsrc.cc')        ||
     url.includes('vidstream')        ||
     url.includes('streamtape.com')   ||
@@ -72,10 +67,6 @@ function getUrlType(url) {
 }
 
 function getProviderName(url) {
-  if (url.includes('godriveplayer'))  return 'GoDrive';
-  if (url.includes('vidlink.pro'))   return 'VidLink';
-  if (url.includes('multiembed.mov')) return 'SuperEmbed';
-  if (url.includes('vsembed.su'))    return 'VidSrc';
   if (url.includes('vidsrc.to'))    return 'VidSrc';
   if (url.includes('vidsrc.me'))    return 'VidSrc';
   if (url.includes('streamtape'))   return 'Streamtape';
@@ -288,7 +279,7 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
               src={activeUrl}
               className="w-full h-full border-0"
               allowFullScreen
-              allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media; scripts; same-origin"
               referrerPolicy="no-referrer-when-downgrade"
               scrolling="no"
               title={title}
@@ -296,7 +287,7 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
             />
 
             {/* Top bar */}
-            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 pointer-events-none">
               <div className="flex items-center gap-2">
                 <span className="text-white text-xs bg-cinema-accent px-2 py-0.5 rounded font-medium">
                   {provider}
