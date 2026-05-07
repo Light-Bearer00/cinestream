@@ -27,6 +27,8 @@ function getUrlType(url) {
     url.includes('vidsrc.in')        ||
     url.includes('vidsrc.pm')        ||
     url.includes('vidsrc.xyz')       ||
+    url.includes('vsembed.su')        ||
+    url.includes('vsembed.ru')        ||
     url.includes('vidsrc.cc')        ||
     url.includes('vidstream')        ||
     url.includes('streamtape.com')   ||
@@ -67,6 +69,8 @@ function getUrlType(url) {
 }
 
 function getProviderName(url) {
+  if (url.includes('vsembed.su'))   return 'VidSrc';
+  if (url.includes('vsembed.ru'))   return 'VidSrc';
   if (url.includes('vidsrc.to'))    return 'VidSrc';
   if (url.includes('vidsrc.me'))    return 'VidSrc';
   if (url.includes('streamtape'))   return 'Streamtape';
