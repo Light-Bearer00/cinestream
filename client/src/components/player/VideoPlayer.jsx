@@ -283,6 +283,7 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
               referrerPolicy="no-referrer-when-downgrade"
               scrolling="no"
               title={title}
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-pointer-lock allow-popups-to-escape-sandbox"
               onError={() => setIframeError(true)}
             />
 
