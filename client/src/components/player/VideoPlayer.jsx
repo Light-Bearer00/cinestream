@@ -27,8 +27,6 @@ function getUrlType(url) {
     url.includes('vidsrc.in')        ||
     url.includes('vidsrc.pm')        ||
     url.includes('vidsrc.xyz')       ||
-    url.includes('vsembed.su')        ||
-    url.includes('vsembed.ru')        ||
     url.includes('vidsrc.cc')        ||
     url.includes('vidstream')        ||
     url.includes('streamtape.com')   ||
@@ -69,8 +67,6 @@ function getUrlType(url) {
 }
 
 function getProviderName(url) {
-  if (url.includes('vsembed.su'))   return 'VidSrc';
-  if (url.includes('vsembed.ru'))   return 'VidSrc';
   if (url.includes('vidsrc.to'))    return 'VidSrc';
   if (url.includes('vidsrc.me'))    return 'VidSrc';
   if (url.includes('streamtape'))   return 'Streamtape';
@@ -283,11 +279,10 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
               src={activeUrl}
               className="w-full h-full border-0"
               allowFullScreen
-              allow="autoplay; fullscreen; picture-in-picture; encrypted-media; scripts; same-origin"
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
               referrerPolicy="no-referrer-when-downgrade"
               scrolling="no"
               title={title}
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-pointer-lock"
               onError={() => setIframeError(true)}
             />
 
