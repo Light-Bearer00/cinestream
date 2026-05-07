@@ -29,6 +29,7 @@ function getUrlType(url) {
     url.includes('vidsrc.xyz')       ||
     url.includes('vsembed.su')        ||
     url.includes('vsembed.ru')        ||
+    url.includes('godriveplayer')     ||
     url.includes('vidlink.pro')       ||
     url.includes('multiembed.mov')    ||
     url.includes('vidsrc.cc')        ||
@@ -71,6 +72,7 @@ function getUrlType(url) {
 }
 
 function getProviderName(url) {
+  if (url.includes('godriveplayer'))  return 'GoDrive';
   if (url.includes('vidlink.pro'))   return 'VidLink';
   if (url.includes('multiembed.mov')) return 'SuperEmbed';
   if (url.includes('vsembed.su'))    return 'VidSrc';
