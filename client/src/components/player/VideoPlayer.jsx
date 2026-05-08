@@ -110,6 +110,7 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
   const [selectedSrc,  setSelectedSrc]  = useState(null);
   const [showQuality,  setShowQuality]  = useState(false);
   const [iframeError,  setIframeError]  = useState(false);
+  const [iframeReady,  setIframeReady]  = useState(false);
 
   const activeUrl  = selectedSrc?.url || streamUrl || '';
   const urlType    = getUrlType(activeUrl);
@@ -235,6 +236,9 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
     )
   );
 
+  // Reset iframe when source changes
+  useEffect(() => { setIframeReady(false); }, [activeUrl]);
+
   // ── IFRAME PLAYER (vidsrc, streamtape, dood, etc.) ────────────────────────
   if (isEmbed) {
 
@@ -286,19 +290,33 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
 
         {!iframeError ? (
           <>
-
-
-            <iframe
+            {/* Click-to-load overlay — prevents heavy ad scripts from running on mobile */}
+            {!iframeReady && (
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center bg-cinema-dark cursor-pointer z-10 group"
+                onClick={() => setIframeReady(true)}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-cinema-card to-cinema-dark" />
+                <div className="relative z-10 flex flex-col items-center gap-3">
+                  <div className="w-20 h-20 rounded-full bg-cinema-accent flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-200">
+                    <svg className="w-9 h-9 fill-white ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                  <p className="text-white font-semibold">{title || 'Click to Play'}</p>
+                  <p className="text-cinema-muted text-xs">Tap to load player</p>
+                </div>
+              </div>
+            )}
+            {iframeReady && <iframe
               key={activeUrl}
               src={activeUrl}
               className="w-full h-full border-0"
               allowFullScreen
-              allow="autoplay; fullscreen; picture-in-picture; encrypted-media; scripts; same-origin"
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
               referrerPolicy="no-referrer-when-downgrade"
               scrolling="no"
               title={title}
               onError={() => setIframeError(true)}
-            />
+            />}
 
             {/* Top bar */}
             <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 pointer-events-none">
