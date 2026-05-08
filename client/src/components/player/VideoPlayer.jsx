@@ -29,6 +29,15 @@ function getUrlType(url) {
     url.includes('vidsrc.xyz')       ||
     url.includes('vidsrc.cc')        ||
     url.includes('vidsrc.sbs')       ||
+    url.includes('vidsrc.me')        ||
+    url.includes('vsembed.su')       ||
+    url.includes('vsembed.ru')       ||
+    url.includes('vidlink.pro')      ||
+    url.includes('godriveplayer')    ||
+    url.includes('vembed.click')     ||
+    url.includes('2embed.online')    ||
+    url.includes('v2.apimdb.net')    ||
+    url.includes('vidsrc.sbs')       ||
     url.includes('vsembed.su')       ||
     url.includes('vsembed.ru')       ||
     url.includes('vidlink.pro')      ||
