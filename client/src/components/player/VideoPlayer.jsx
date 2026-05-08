@@ -28,6 +28,11 @@ function getUrlType(url) {
     url.includes('vidsrc.pm')        ||
     url.includes('vidsrc.xyz')       ||
     url.includes('vidsrc.cc')        ||
+    url.includes('vidsrc.sbs')       ||
+    url.includes('vsembed.su')       ||
+    url.includes('vsembed.ru')       ||
+    url.includes('vidlink.pro')      ||
+    url.includes('godriveplayer')    ||
     url.includes('vidstream')        ||
     url.includes('streamtape.com')   ||
     url.includes('dood.ws')          ||
