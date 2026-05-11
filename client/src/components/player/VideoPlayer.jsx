@@ -18,65 +18,31 @@ import {
  */
 function getUrlType(url) {
   if (!url) return 'unknown';
-
-  // ── Embed providers (MUST use iframe) ──
+  if (url.endsWith('.m3u8')) return 'hls';
   if (
-    url.includes('vidsrc.to')        ||
-    url.includes('vidsrc.me')        ||
-    url.includes('vidsrc.net')       ||
-    url.includes('vidsrc.in')        ||
-    url.includes('vidsrc.pm')        ||
-    url.includes('vidsrc.xyz')       ||
-    url.includes('vidsrc.cc')        ||
-    url.includes('vidsrc.sbs')       ||
-    url.includes('vidsrc.me')        ||
-    url.includes('vsembed.su')       ||
-    url.includes('vsembed.ru')       ||
-    url.includes('vidlink.pro')      ||
-    url.includes('godriveplayer')    ||
-    url.includes('vembed.click')     ||
-    url.includes('2embed.online')    ||
-    url.includes('v2.apimdb.net')    ||
-    url.includes('vidsrc.sbs')       ||
-    url.includes('vsembed.su')       ||
-    url.includes('vsembed.ru')       ||
-    url.includes('vidlink.pro')      ||
-    url.includes('godriveplayer')    ||
-    url.includes('vidstream')        ||
-    url.includes('streamtape.com')   ||
-    url.includes('dood.ws')          ||
-    url.includes('dood.la')          ||
-    url.includes('doodstream.com')   ||
-    url.includes('filemoon.sx')      ||
-    url.includes('filemoon.to')      ||
-    url.includes('mixdrop.co')       ||
-    url.includes('mixdrop.to')       ||
-    url.includes('mp4upload.com')    ||
-    url.includes('upcloud.')         ||
-    url.includes('embedsito')        ||
-    url.includes('embed.su')         ||
-    url.includes('multiembed')       ||
-    url.includes('2embed')           ||
-    url.includes('smashystream')     ||
-    url.includes('autoembed')        ||
-    url.includes('moviesapi')        ||
-    url.includes('embedrise')        ||
-    url.includes('embedder')         ||
-    url.includes('/embed/')          // catch-all for any /embed/ URL
+    url.includes('vidsrc.icu')        ||
+    url.includes('vidsrc.cc')         ||
+    url.includes('cinesrc.st')        ||
+    url.includes('vidsrc-embed.su')   ||
+    url.includes('vidsrc-embed.ru')   ||
+    url.includes('vsembed.su')        ||
+    url.includes('vsembed.ru')        ||
+    url.includes('vidsrc.to')         ||
+    url.includes('vidsrc.me')         ||
+    url.includes('vidsrc.xyz')        ||
+    url.includes('vidsrc.sbs')        ||
+    url.includes('vidlink.pro')       ||
+    url.includes('godriveplayer')     ||
+    url.includes('embed.su')          ||
+    url.includes('2embed')            ||
+    url.includes('embedrise')         ||
+    url.includes('moviesapi')         ||
+    url.includes('multiembed')        ||
+    url.includes('autoembed')         ||
+    url.includes('vembed.click')      ||
+    url.includes('v2.apimdb')
   ) return 'embed';
-
-  // ── HLS stream ──
-  if (url.endsWith('.m3u8') || url.includes('.m3u8?')) return 'hls';
-
-  // ── Direct video file ──
-  if (
-    url.endsWith('.mp4')  || url.includes('.mp4?')  ||
-    url.endsWith('.webm') || url.includes('.webm?') ||
-    url.endsWith('.mkv')  ||
-    url.includes('archive.org')
-  ) return 'mp4';
-
-  // Default — try as embed iframe (safer than crashing native player)
+  if (url.includes('archive.org') || url.match(/\.(mp4|webm|ogg)$/i)) return 'direct';
   return 'embed';
 }
 
