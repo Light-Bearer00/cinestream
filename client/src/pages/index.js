@@ -98,7 +98,7 @@ function HeroCarousel({ movies }) {
         </div>
       ))}
       {trailerKey && (
-        <div className="absolute inset-0 transition-opacity duration-1000" style={{ opacity: showTrailer ? 1 : 0, pointerEvents: showTrailer ? 'auto' : 'none' }}>
+        <div className="absolute inset-0 transition-opacity duration-1000" style={{ opacity: showTrailer ? 1 : 0, pointerEvents: 'none' }}>
           <iframe
             key={trailerKey}
             src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=${muted ? 1 : 0}&controls=0&loop=1&playlist=${trailerKey}&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3`}
