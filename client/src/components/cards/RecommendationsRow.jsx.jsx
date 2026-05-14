@@ -1,36 +1,31 @@
 /**
  * Recommendations Row
- * "Because you watched X" — based on genres from watch history
  */
 import { useState, useEffect } from 'react';
 import { movieApi } from '../../utils/api';
 import MovieCard from './MovieCard';
 import { getAllContinueWatching } from '../../utils/watchProgress';
-import { FiStar } from 'react-icons/fi';
 
 export default function RecommendationsRow() {
-  const [movies,    setMovies]    = useState([]);
-  const [basedOn,   setBasedOn]   = useState('');
-  const [loading,   setLoading]   = useState(true);
+  const [movies,  setMovies]  = useState([]);
+  const [basedOn, setBasedOn] = useState('');
 
   useEffect(() => {
-    const history = getAllContinueWatching();
-    if (!history.length) { setLoading(false); return; }
-
-    // Get genres from most recently watched
-    const recent = history[0];
-    const title  = recent.showTitle || recent.title || '';
-    setBasedOn(title);
-
-    // Fetch movies by similar genre
-    const genre = recent.genre?.[0] || 'Action';
-    movieApi.getAll({ genre, sort: 'rating', limit: 12 })
-      .then(r => setMovies(r.data.movies || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    try {
+      const history = getAllContinueWatching();
+      if (!history || !history.length) return;
+      const recent = history[0];
+      const title  = recent.showTitle || recent.title || '';
+      setBasedOn(title);
+      movieApi.getAll({ sort: 'rating', limit: 12 })
+        .then(r => setMovies(r.data.movies || []))
+        .catch(() => {});
+    } catch (e) {
+      // silently fail
+    }
   }, []);
 
-  if (loading || !movies.length) return null;
+  if (!movies.length) return null;
 
   return (
     <section className="mb-10">
