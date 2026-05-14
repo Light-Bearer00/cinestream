@@ -38,7 +38,7 @@ export default function ContinueWatchingRow() {
           Continue Watching
         </h2>
       </div>
-      <div className="scroll-row flex gap-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="scroll-row flex gap-4 px-4 sm:px-6 lg:px-8">
         {items.map((item, i) => {
           const href = item.type === 'movie'
             ? `/movie/${item.movieId}`

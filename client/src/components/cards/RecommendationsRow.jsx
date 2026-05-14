@@ -33,7 +33,7 @@ export default function RecommendationsRow() {
         </h2>
         {basedOn && <p className="text-cinema-accent text-sm ml-3 self-end mb-1">{basedOn}</p>}
       </div>
-      <div className="scroll-row flex gap-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="scroll-row flex gap-4 px-4 sm:px-6 lg:px-8">
         {movies.map(movie => (
           <MovieCard key={movie._id} movie={movie} size="sm" />
         ))}
