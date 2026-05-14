@@ -1,10 +1,10 @@
 /**
- * Continue Watching Row
+ * Continue Watching Row - matches MovieRow structure exactly
  */
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FiPlay, FiX, FiChevronRight } from 'react-icons/fi';
+import { FiPlay, FiX } from 'react-icons/fi';
 import { getAllContinueWatching, clearMovieProgress, formatTimeRemaining } from '../../utils/watchProgress';
 
 export default function ContinueWatchingRow() {
@@ -16,9 +16,7 @@ export default function ContinueWatchingRow() {
     try {
       const all = getAllContinueWatching();
       setItems(all || []);
-    } catch (e) {
-      setItems([]);
-    }
+    } catch (e) { setItems([]); }
   }, []);
 
   if (!mounted || !items.length) return null;
@@ -38,7 +36,7 @@ export default function ContinueWatchingRow() {
           Continue Watching
         </h2>
       </div>
-      <div className="scroll-row flex gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="scroll-row flex gap-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {items.map((item, i) => {
           const href = item.type === 'movie'
             ? `/movie/${item.movieId}`
@@ -48,7 +46,8 @@ export default function ContinueWatchingRow() {
               <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-cinema-card border border-cinema-border group-hover:border-cinema-accent/50 transition-all duration-300 shadow-lg group-hover:shadow-cinema-accent/20 group-hover:shadow-xl">
                 {item.poster ? (
                   <Image src={item.poster} alt={item.title || ''} fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized />
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width: 640px) 144px, 208px" unoptimized />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-cinema-muted">
                     <FiPlay size={32} />
