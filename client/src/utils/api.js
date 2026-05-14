@@ -5,7 +5,7 @@
 
 import axios from 'axios';
 
-const API_URL = 'royalqueen.up.railway.app';
+const API_URL = 'https://royalqueen.up.railway.app';
 
 // Create axios instance
 const api = axios.create({
