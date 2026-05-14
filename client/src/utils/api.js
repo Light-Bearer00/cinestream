@@ -5,7 +5,7 @@
 
 import axios from 'axios';
 
-const API_URL = 'https://cinestream-backend-production.up.railway.app';
+const API_URL = 'server-production-a150.up.railway.app';
 
 // Create axios instance
 const api = axios.create({
