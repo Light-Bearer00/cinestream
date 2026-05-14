@@ -1,5 +1,5 @@
 /**
- * Recommendations Row
+ * Recommendations Row - uses MovieCard for consistent sizing
  */
 import { useState, useEffect } from 'react';
 import { movieApi } from '../../utils/api';
@@ -15,14 +15,11 @@ export default function RecommendationsRow() {
       const history = getAllContinueWatching();
       if (!history || !history.length) return;
       const recent = history[0];
-      const title  = recent.showTitle || recent.title || '';
-      setBasedOn(title);
+      setBasedOn(recent.showTitle || recent.title || '');
       movieApi.getAll({ sort: 'rating', limit: 12 })
         .then(r => setMovies(r.data.movies || []))
         .catch(() => {});
-    } catch (e) {
-      // silently fail
-    }
+    } catch (e) {}
   }, []);
 
   if (!movies.length) return null;
@@ -37,9 +34,7 @@ export default function RecommendationsRow() {
       </div>
       <div className="flex gap-4 overflow-x-auto px-4 sm:px-6 lg:px-8 pb-2 scrollbar-hide">
         {movies.map(movie => (
-          <div key={movie._id} className="shrink-0 w-36">
-            <MovieCard movie={movie} size="sm" />
-          </div>
+          <MovieCard key={movie._id} movie={movie} size="sm" />
         ))}
       </div>
     </section>
