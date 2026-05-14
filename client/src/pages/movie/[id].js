@@ -1,10 +1,6 @@
 /**
- * Movie Detail Page - Fixed version
- * - Handles seeded movies (archive.org MP4 direct links)
- * - Handles scraped movies (embed sources like autoembed, vidsrc etc.)
- * - Poster fallback when image fails to load
+ * Movie Detail Page
  */
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -14,7 +10,9 @@ import { movieApi, userApi } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import VideoPlayer from '../../components/player/VideoPlayer';
 import MovieCard from '../../components/cards/MovieCard';
-import { FiStar, FiClock, FiCalendar, FiHeart, FiPlay, FiGlobe, FiServer, FiUsers, FiDownload } from 'react-icons/fi';
+import TrailerPlayer from '../../components/player/TrailerPlayer';
+import WatchlistButton from '../../components/ui/WatchlistButton';
+import { FiStar, FiClock, FiCalendar, FiHeart, FiPlay, FiGlobe, FiServer, FiUsers, FiDownload, FiBookmark } from 'react-icons/fi';
 import AdBlockBanner from '../../components/ui/AdBlockBanner';
 import { saveMovieProgress, getMovieProgress } from '../../utils/watchProgress';
 
@@ -23,14 +21,13 @@ export default function MoviePage() {
   const { id } = router.query;
   const { user } = useAuth();
 
-  const [movie,        setMovie]        = useState(null);
-  const [related,      setRelated]      = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [showPlayer,   setShowPlayer]   = useState(false);
-  const [isFav,        setIsFav]        = useState(false);
-  const [imgError,     setImgError]     = useState(false);
-  const [resumeTime,   setResumeTime]   = useState(0);
-
+  const [movie,      setMovie]      = useState(null);
+  const [related,    setRelated]    = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [showPlayer, setShowPlayer] = useState(false);
+  const [isFav,      setIsFav]      = useState(false);
+  const [imgError,   setImgError]   = useState(false);
+  const [resumeTime, setResumeTime] = useState(0);
 
   useEffect(() => {
     if (!id) return;
@@ -105,13 +102,8 @@ export default function MoviePage() {
 
   const handleProgress = (currentTime, duration) => {
     if (!movie || !currentTime) return;
-    const realDuration = duration > 0 ? duration
-      : movie.duration > 0 ? movie.duration * 60
-      : 7200;
-    saveMovieProgress(movie._id, currentTime, realDuration, {
-      title:  movie.title,
-      poster: movie.poster,
-    });
+    const realDuration = duration > 0 ? duration : movie.duration > 0 ? movie.duration * 60 : 7200;
+    saveMovieProgress(movie._id, currentTime, realDuration, { title: movie.title, poster: movie.poster });
   };
 
   if (loading) {
@@ -151,15 +143,8 @@ export default function MoviePage() {
       {/* Backdrop */}
       <div className="relative h-[50vh] min-h-80 overflow-hidden">
         {(movie.backdrop || movie.poster) && !imgError ? (
-          <Image
-            src={movie.backdrop || movie.poster}
-            alt={movie.title}
-            fill
-            className="object-cover object-top"
-            priority
-            unoptimized
-            onError={() => setImgError(true)}
-          />
+          <Image src={movie.backdrop || movie.poster} alt={movie.title} fill
+            className="object-cover object-top" priority unoptimized onError={() => setImgError(true)} />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-cinema-card to-cinema-black flex items-center justify-center">
             <span className="text-8xl opacity-10">🎬</span>
@@ -177,7 +162,7 @@ export default function MoviePage() {
           <div className="hidden lg:block">
             <div className="sticky top-24 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border border-cinema-border bg-cinema-card">
               {movie.poster && !imgError ? (
-                <Image src={movie.poster} alt={movie.title} fill className="object-cover" unoptimized onError={() => setImgError(true)}/>
+                <Image src={movie.poster} alt={movie.title} fill className="object-cover" unoptimized onError={() => setImgError(true)} />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-3">
                   <span className="text-6xl">🎬</span>
@@ -238,6 +223,7 @@ export default function MoviePage() {
               </div>
             )}
 
+            {/* Action Buttons */}
             <div className="flex flex-wrap gap-3">
               {streamSources.length > 0 ? (
                 <button onClick={() => setShowPlayer(!showPlayer)}
@@ -251,6 +237,9 @@ export default function MoviePage() {
                 </div>
               )}
 
+              {/* Trailer Button */}
+              <TrailerPlayer tmdbId={movie.tmdbId} type="movie" title={movie.title} />
+
               <button onClick={handleToggleFav}
                 className={`flex items-center gap-2 px-6 py-3 rounded-full border transition-all ${
                   isFav ? 'bg-cinema-accent/20 border-cinema-accent text-cinema-accent'
@@ -260,29 +249,21 @@ export default function MoviePage() {
                 {isFav ? 'Favorited' : 'Favorite'}
               </button>
 
-              <button
-                onClick={() => {
-                  const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-                  router.push(`/watch-party/${roomId}?movieId=${movie._id}`);
-                }}
-                className="flex items-center gap-2 px-6 py-3 rounded-full border border-cinema-border text-cinema-muted hover:border-purple-500 hover:text-purple-400 transition-all"
-              >
-                <FiUsers size={18} />
-                Watch Party
-              </button>
+              {/* Watchlist Button */}
+              <WatchlistButton item={movie} type="movie"
+                className="flex items-center gap-2 px-6 py-3 rounded-full border border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white transition-all" />
 
               <button
-                onClick={fetchDownloads}
-                className="flex items-center gap-2 px-6 py-3 rounded-full border border-cinema-border text-cinema-muted hover:border-green-500 hover:text-green-400 transition-all"
-              >
-                <FiDownload size={18} />
-                Download
+                onClick={() => { const roomId = Math.random().toString(36).substring(2, 8).toUpperCase(); router.push(`/watch-party/${roomId}?movieId=${movie._id}`); }}
+                className="flex items-center gap-2 px-6 py-3 rounded-full border border-cinema-border text-cinema-muted hover:border-purple-500 hover:text-purple-400 transition-all">
+                <FiUsers size={18} /> Watch Party
+              </button>
+
+              <button onClick={fetchDownloads}
+                className="flex items-center gap-2 px-6 py-3 rounded-full border border-cinema-border text-cinema-muted hover:border-green-500 hover:text-green-400 transition-all">
+                <FiDownload size={18} /> Download
               </button>
             </div>
-
-
-
-
 
             {/* Resume banner */}
             {!showPlayer && resumeTime > 0 && (
@@ -291,10 +272,8 @@ export default function MoviePage() {
                 <p className="text-cinema-text text-sm flex-1">
                   You watched <span className="text-white font-semibold">{Math.floor(resumeTime / 60)}m</span> — resume where you left off?
                 </p>
-                <button
-                  onClick={() => setShowPlayer(true)}
-                  className="text-cinema-accent text-sm font-semibold hover:underline shrink-0"
-                >
+                <button onClick={() => setShowPlayer(true)}
+                  className="text-cinema-accent text-sm font-semibold hover:underline shrink-0">
                   Resume
                 </button>
               </div>
@@ -303,8 +282,7 @@ export default function MoviePage() {
             {/* Video Player */}
             {showPlayer && streamSources.length > 0 && (
               <div className="mt-4 animate-slide-up">
-                <h2 className="text-2xl text-white mb-3"
-                  style={{ fontFamily: 'Bebas Neue, serif', letterSpacing: '0.1em' }}>
+                <h2 className="text-2xl text-white mb-3" style={{ fontFamily: 'Bebas Neue, serif', letterSpacing: '0.1em' }}>
                   Now Playing
                 </h2>
                 <VideoPlayer
@@ -330,10 +308,10 @@ export default function MoviePage() {
           </div>
         </div>
 
+        {/* Related Movies */}
         {related.length > 0 && (
           <div className="mt-12">
-            <h2 className="text-3xl text-white mb-6"
-              style={{ fontFamily: 'Bebas Neue, serif', letterSpacing: '0.1em' }}>
+            <h2 className="text-3xl text-white mb-6" style={{ fontFamily: 'Bebas Neue, serif', letterSpacing: '0.1em' }}>
               You May Also Like
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
