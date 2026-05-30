@@ -20,6 +20,10 @@ function getUrlType(url) {
   if (!url) return 'unknown';
   if (url.endsWith('.m3u8')) return 'hls';
   if (
+    url.includes('ezvidapi.com')       ||
+    url.includes('vidbinge.to')        ||
+    url.includes('embed-api.stream')   ||
+    url.includes('player.embed-api')   ||
     url.includes('vidsrcme.su')       ||
     url.includes('vidsrcme.ru')       ||
     url.includes('vidsrc-me.su')      ||
