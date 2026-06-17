@@ -267,6 +267,8 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
               src={activeUrl}
               className="w-full h-full border-0"
               allowFullScreen
+              webkitallowfullscreen="true"
+              mozallowfullscreen="true"
               allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
               referrerPolicy="no-referrer-when-downgrade"
               scrolling="no"
