@@ -35,6 +35,7 @@ function getUrlType(url) {
     url.includes('vidsrc-embed.ru')   ||
     url.includes('vsembed.su')        ||
     url.includes('vsembed.ru')        ||
+    url.includes('111movies.com')      ||
     url.includes('vidsrc.to')         ||
     url.includes('vidsrc.me')         ||
     url.includes('vidsrc.xyz')        ||
@@ -55,6 +56,7 @@ function getUrlType(url) {
 }
 
 function getProviderName(url) {
+  if (url.includes('111movies.com'))return '111Movies';
   if (url.includes('vidsrc.to'))    return 'VidSrc';
   if (url.includes('vidsrc.me'))    return 'VidSrc';
   if (url.includes('streamtape'))   return 'Streamtape';
