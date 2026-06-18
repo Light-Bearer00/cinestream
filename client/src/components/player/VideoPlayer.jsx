@@ -258,9 +258,8 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
 
     return (
       <>
-      <div ref={containerRef} className="relative w-full" style={{ paddingTop: "56.25%" }}>
+      <div ref={containerRef} className="relative w-full aspect-video rounded-xl overflow-hidden bg-black group">
 
-        <div className="absolute inset-0">
         {!iframeError ? (
           <>
             <iframe
@@ -320,7 +319,6 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
             </div>
           </div>
         )}
-        </div>
       </div>
 
       {/* Server switcher — OUTSIDE the player, below it */}
