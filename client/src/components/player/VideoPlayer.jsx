@@ -20,44 +20,35 @@ function getUrlType(url) {
   if (!url) return 'unknown';
   if (url.endsWith('.m3u8')) return 'hls';
   if (
-    // ── Tier 1 servers ──────────────────────────────
-    url.includes('vidsrc.to')         ||
-    url.includes('vidlink.pro')       ||
-    url.includes('videasy.net')       ||
-    url.includes('vidsrc.sbs')        ||
-    url.includes('vidsrc.mov')        ||
-    // ── Tier 2 servers ──────────────────────────────
-    url.includes('vidfast.pro')       ||
-    url.includes('multiembed.mov')    ||
-    url.includes('multiembed')        ||
-    url.includes('autoembed')         ||
-    url.includes('2embed.stream')     ||
-    url.includes('2embed.cc')         ||
-    url.includes('embed.su')          ||
-    // ── Legacy / extras kept for backward compat ────
-    url.includes('vidsrc.me')         ||
-    url.includes('vidsrc.cc')         ||
-    url.includes('vidsrc.icu')        ||
-    url.includes('vidsrc.xyz')        ||
-    url.includes('vidsrc.vip')        ||
-    url.includes('vidsrc.pro')        ||
+    url.includes('ezvidapi.com')       ||
+    url.includes('vidbinge.to')        ||
+    url.includes('embed-api.stream')   ||
+    url.includes('player.embed-api')   ||
     url.includes('vidsrcme.su')       ||
     url.includes('vidsrcme.ru')       ||
     url.includes('vidsrc-me.su')      ||
     url.includes('vsrc.su')           ||
-    url.includes('vsembed.su')        ||
-    url.includes('vsembed.ru')        ||
+    url.includes('vidsrc.icu')        ||
+    url.includes('vidsrc.cc')         ||
+    url.includes('cinesrc.st')        ||
     url.includes('vidsrc-embed.su')   ||
     url.includes('vidsrc-embed.ru')   ||
-    url.includes('ezvidapi.com')      ||
-    url.includes('vidbinge.to')       ||
-    url.includes('embed-api.stream')  ||
-    url.includes('player.embed-api')  ||
+    url.includes('vsembed.su')        ||
+    url.includes('vsembed.ru')        ||
+    url.includes('111movies.com')      ||
+    url.includes('vidsrc.to')         ||
+    url.includes('vidsrc.me')         ||
+    url.includes('vidsrc.xyz')        ||
+    url.includes('vidsrc.sbs')        ||
+    url.includes('vidlink.pro')       ||
+    url.includes('godriveplayer')     ||
+    url.includes('embed.su')          ||
+    url.includes('2embed')            ||
     url.includes('embedrise')         ||
     url.includes('moviesapi')         ||
-    url.includes('godriveplayer')     ||
+    url.includes('multiembed')        ||
+    url.includes('autoembed')         ||
     url.includes('vembed.click')      ||
-    url.includes('cinesrc.st')        ||
     url.includes('v2.apimdb')
   ) return 'embed';
   if (url.includes('archive.org') || url.match(/\.(mp4|webm|ogg)$/i)) return 'direct';
@@ -65,32 +56,16 @@ function getUrlType(url) {
 }
 
 function getProviderName(url) {
-  if (!url) return 'Player';
-  // Tier 1
-  if (url.includes('vidsrc.to'))      return 'VidSrc';
-  if (url.includes('vidlink.pro'))    return 'VidLink';
-  if (url.includes('videasy.net'))    return 'Videasy';
-  if (url.includes('vidsrc.sbs'))     return 'VidSrc SBS';
-  if (url.includes('vidsrc.mov'))     return 'VidSrc MOV';
-  // Tier 2
-  if (url.includes('vidfast.pro'))    return 'VidFast';
-  if (url.includes('multiembed'))     return 'SuperEmbed';
-  if (url.includes('autoembed'))      return 'AutoEmbed';
-  if (url.includes('2embed'))         return '2Embed';
-  if (url.includes('embed.su'))       return 'Embed.su';
-  // Legacy
-  if (url.includes('vidsrc.me'))      return 'VidSrc';
-  if (url.includes('vidsrc.cc'))      return 'VidSrc CC';
-  if (url.includes('vidsrc.icu'))     return 'VidSrc ICU';
-  if (url.includes('ezvidapi'))       return 'EzVid';
-  if (url.includes('vidbinge'))       return 'VidBinge';
-  if (url.includes('streamtape'))     return 'Streamtape';
-  if (url.includes('dood'))           return 'Doodstream';
-  if (url.includes('filemoon'))       return 'Filemoon';
-  if (url.includes('mixdrop'))        return 'Mixdrop';
-  if (url.includes('mp4upload'))      return 'MP4Upload';
-  if (url.includes('archive.org'))    return 'Internet Archive';
-  return 'Player';
+  if (url.includes('111movies.com'))return '111Movies';
+  if (url.includes('vidsrc.to'))    return 'VidSrc';
+  if (url.includes('vidsrc.me'))    return 'VidSrc';
+  if (url.includes('streamtape'))   return 'Streamtape';
+  if (url.includes('dood'))         return 'Doodstream';
+  if (url.includes('filemoon'))     return 'Filemoon';
+  if (url.includes('mixdrop'))      return 'Mixdrop';
+  if (url.includes('mp4upload'))    return 'MP4Upload';
+  if (url.includes('archive.org'))  return 'Internet Archive';
+  return 'External';
 }
 
 export default function VideoPlayer({ streamUrl, streamSources = [], title, onProgress, startTime = 0 }) {
@@ -283,15 +258,18 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
 
     return (
       <>
-      <div ref={containerRef} className="relative w-full aspect-video rounded-xl overflow-hidden bg-black group">
+      <div ref={containerRef} className="relative w-full" style={{ paddingTop: "56.25%" }}>
 
+        <div className="absolute inset-0">
         {!iframeError ? (
           <>
             <iframe
               key={activeUrl}
               src={activeUrl}
-              className="w-full h-full border-0"
+              className="absolute inset-0 w-full h-full border-0"
               allowFullScreen
+              webkitallowfullscreen="true"
+              mozallowfullscreen="true"
               allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
               referrerPolicy="no-referrer-when-downgrade"
               scrolling="no"
@@ -342,26 +320,29 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* Server switcher — OUTSIDE the player, below it */}
       {streamSources.length > 1 && (
-        <div className="flex flex-wrap gap-2 mt-3">
-          {streamSources.map((s, i) => (
-            <button key={i}
-              onClick={() => { setSelectedSrc(s); setIframeError(false); }}
-              className={`text-xs px-4 py-2 rounded-xl font-medium transition-all border ${
-                selectedSrc?.url === s.url
-                  ? 'bg-cinema-accent border-cinema-accent text-white'
-                  : 'bg-cinema-card border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white'
-              }`}>
-              {s.label || `Server ${i + 1}`}
-            </button>
-          ))}
-          <a href={activeUrl} target="_blank" rel="noopener noreferrer"
-            className="ml-auto flex items-center gap-1 bg-cinema-card border border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white text-xs px-4 py-2 rounded-xl transition-colors">
-            <FiExternalLink size={12}/> Open
-          </a>
+        <div className="mt-3">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {streamSources.map((s, i) => (
+              <button key={i}
+                onClick={() => { setSelectedSrc(s); setIframeError(false); }}
+                className={`text-xs px-4 py-2 rounded-xl font-medium transition-all border shrink-0 ${
+                  selectedSrc?.url === s.url
+                    ? 'bg-cinema-accent border-cinema-accent text-white'
+                    : 'bg-cinema-card border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white'
+                }`}>
+                {s.label || `Server ${i + 1}`}
+              </button>
+            ))}
+            <a href={activeUrl} target="_blank" rel="noopener noreferrer"
+              className="ml-auto shrink-0 flex items-center gap-1 bg-cinema-card border border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white text-xs px-4 py-2 rounded-xl transition-colors">
+              <FiExternalLink size={12}/> Open
+            </a>
+          </div>
         </div>
       )}
     </>
