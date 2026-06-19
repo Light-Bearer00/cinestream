@@ -18,45 +18,59 @@ import {
  */
 function getUrlType(url) {
   if (!url) return 'unknown';
-  if (url.endsWith('.m3u8')) return 'hls';
+
+  // ── Embed providers (MUST use iframe) ──
   if (
-    url.includes('ezvidapi.com')       ||
-    url.includes('vidbinge.to')        ||
-    url.includes('embed-api.stream')   ||
-    url.includes('player.embed-api')   ||
-    url.includes('vidsrcme.su')       ||
-    url.includes('vidsrcme.ru')       ||
-    url.includes('vidsrc-me.su')      ||
-    url.includes('vsrc.su')           ||
-    url.includes('vidsrc.icu')        ||
-    url.includes('vidsrc.cc')         ||
-    url.includes('cinesrc.st')        ||
-    url.includes('vidsrc-embed.su')   ||
-    url.includes('vidsrc-embed.ru')   ||
-    url.includes('vsembed.su')        ||
+    url.includes('vidsrc.to')        ||
+    url.includes('vidsrc.me')        ||
+    url.includes('vidsrc.net')       ||
+    url.includes('vidsrc.in')        ||
+    url.includes('vidsrc.pm')        ||
+    url.includes('vidsrc.xyz')       ||
+    url.includes('vidsrc.cc')        ||
+    url.includes('vidstream')        ||
+    url.includes('streamtape.com')   ||
+    url.includes('dood.ws')          ||
+    url.includes('dood.la')          ||
+    url.includes('doodstream.com')   ||
+    url.includes('filemoon.sx')      ||
+    url.includes('filemoon.to')      ||
+    url.includes('mixdrop.co')       ||
+    url.includes('mixdrop.to')       ||
+    url.includes('mp4upload.com')    ||
+    url.includes('upcloud.')         ||
+    url.includes('embedsito')        ||
+    url.includes('embed.su')         ||
+    url.includes('multiembed')       ||
+    url.includes('2embed')           ||
+    url.includes('smashystream')     ||
+    url.includes('autoembed')        ||
+    url.includes('moviesapi')        ||
+    url.includes('embedrise')        ||
+    url.includes('embedder')         ||
+    url.includes('/embed/')          ||
     url.includes('vsembed.ru')        ||
-    url.includes('111movies.com')      ||
-    url.includes('vidsrc.to')         ||
-    url.includes('vidsrc.me')         ||
-    url.includes('vidsrc.xyz')        ||
-    url.includes('vidsrc.sbs')        ||
-    url.includes('vidlink.pro')       ||
-    url.includes('godriveplayer')     ||
-    url.includes('embed.su')          ||
-    url.includes('2embed')            ||
-    url.includes('embedrise')         ||
-    url.includes('moviesapi')         ||
-    url.includes('multiembed')        ||
-    url.includes('autoembed')         ||
-    url.includes('vembed.click')      ||
-    url.includes('v2.apimdb')
+    url.includes('vsembed.su')        ||
+    url.includes('moviesapi.club')    ||
+    url.includes('111movies.com')
   ) return 'embed';
-  if (url.includes('archive.org') || url.match(/\.(mp4|webm|ogg)$/i)) return 'direct';
+
+  // ── HLS stream ──
+  if (url.endsWith('.m3u8') || url.includes('.m3u8?')) return 'hls';
+
+  // ── Direct video file ──
+  if (
+    url.endsWith('.mp4')  || url.includes('.mp4?')  ||
+    url.endsWith('.webm') || url.includes('.webm?') ||
+    url.endsWith('.mkv')  ||
+    url.includes('archive.org')
+  ) return 'mp4';
+
+  // Default — try as embed iframe (safer than crashing native player)
   return 'embed';
 }
 
 function getProviderName(url) {
-  if (url.includes('111movies.com'))return '111Movies';
   if (url.includes('vidsrc.to'))    return 'VidSrc';
   if (url.includes('vidsrc.me'))    return 'VidSrc';
   if (url.includes('streamtape'))   return 'Streamtape';
@@ -262,22 +276,25 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
 
         {!iframeError ? (
           <>
+
+
             <iframe
               key={activeUrl}
               src={activeUrl}
-              className="absolute inset-0 w-full h-full border-0"
+              className="w-full h-full border-0"
               allowFullScreen
               webkitallowfullscreen="true"
               mozallowfullscreen="true"
-              allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media; scripts; same-origin"
               referrerPolicy="no-referrer-when-downgrade"
               scrolling="no"
               title={title}
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-pointer-lock"
               onError={() => setIframeError(true)}
             />
 
             {/* Top bar */}
-            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 pointer-events-none">
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
               <div className="flex items-center gap-2">
                 <span className="text-white text-xs bg-cinema-accent px-2 py-0.5 rounded font-medium">
                   {provider}
@@ -323,24 +340,22 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
 
       {/* Server switcher — OUTSIDE the player, below it */}
       {streamSources.length > 1 && (
-        <div className="mt-3">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {streamSources.map((s, i) => (
-              <button key={i}
-                onClick={() => { setSelectedSrc(s); setIframeError(false); }}
-                className={`text-xs px-4 py-2 rounded-xl font-medium transition-all border shrink-0 ${
-                  selectedSrc?.url === s.url
-                    ? 'bg-cinema-accent border-cinema-accent text-white'
-                    : 'bg-cinema-card border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white'
-                }`}>
-                {s.label || `Server ${i + 1}`}
-              </button>
-            ))}
-            <a href={activeUrl} target="_blank" rel="noopener noreferrer"
-              className="ml-auto shrink-0 flex items-center gap-1 bg-cinema-card border border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white text-xs px-4 py-2 rounded-xl transition-colors">
-              <FiExternalLink size={12}/> Open
-            </a>
-          </div>
+        <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide">
+          {streamSources.map((s, i) => (
+            <button key={i}
+              onClick={() => { setSelectedSrc(s); setIframeError(false); }}
+              className={`text-xs px-4 py-2 rounded-xl font-medium transition-all border shrink-0 ${
+                selectedSrc?.url === s.url
+                  ? 'bg-cinema-accent border-cinema-accent text-white'
+                  : 'bg-cinema-card border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white'
+              }`}>
+              {s.label || `Server ${i + 1}`}
+            </button>
+          ))}
+          <a href={activeUrl} target="_blank" rel="noopener noreferrer"
+            className="shrink-0 flex items-center gap-1 bg-cinema-card border border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white text-xs px-4 py-2 rounded-xl transition-colors">
+            <FiExternalLink size={12}/> Open
+          </a>
         </div>
       )}
     </>
