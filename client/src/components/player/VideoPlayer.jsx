@@ -283,16 +283,11 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
 
     return (
       <>
-      {/* 
-        Use a padding-bottom trick instead of aspect-video so the iframe
-        fills 100% of the space without cropping the embed player's own
-        timeline / fullscreen bar on any screen size.
-        padding-bottom: 56.25% = 16:9 ratio
-      */}
+      {/* Responsive 16:9 iframe wrapper — overflow NOT hidden so embed player controls are never clipped */}
       <div
         ref={containerRef}
-        className="relative w-full rounded-xl overflow-hidden bg-black group"
-        style={{ paddingBottom: '56.25%', height: 0 }}
+        className="relative w-full bg-black group"
+        style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', height: 0, borderRadius: '0.75rem' }}
       >
 
         {!iframeError ? (
@@ -307,9 +302,11 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
                 width: '100%',
                 height: '100%',
                 border: 'none',
+                display: 'block',
+                borderRadius: '0.75rem',
               }}
               allowFullScreen
-              allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write"
               referrerPolicy="no-referrer-when-downgrade"
               scrolling="no"
               title={title}
