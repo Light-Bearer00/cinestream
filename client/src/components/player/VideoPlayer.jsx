@@ -18,64 +18,79 @@ import {
  */
 function getUrlType(url) {
   if (!url) return 'unknown';
-
-  // ── Embed providers (MUST use iframe) ──
+  if (url.endsWith('.m3u8')) return 'hls';
   if (
-    url.includes('vidsrc.to')        ||
-    url.includes('vidsrc.me')        ||
-    url.includes('vidsrc.net')       ||
-    url.includes('vidsrc.in')        ||
-    url.includes('vidsrc.pm')        ||
-    url.includes('vidsrc.xyz')       ||
-    url.includes('vidsrc.cc')        ||
-    url.includes('vidstream')        ||
-    url.includes('streamtape.com')   ||
-    url.includes('dood.ws')          ||
-    url.includes('dood.la')          ||
-    url.includes('doodstream.com')   ||
-    url.includes('filemoon.sx')      ||
-    url.includes('filemoon.to')      ||
-    url.includes('mixdrop.co')       ||
-    url.includes('mixdrop.to')       ||
-    url.includes('mp4upload.com')    ||
-    url.includes('upcloud.')         ||
-    url.includes('embedsito')        ||
-    url.includes('embed.su')         ||
-    url.includes('multiembed')       ||
-    url.includes('2embed')           ||
-    url.includes('smashystream')     ||
-    url.includes('autoembed')        ||
-    url.includes('moviesapi')        ||
-    url.includes('embedrise')        ||
-    url.includes('embedder')         ||
-    url.includes('/embed/')          // catch-all for any /embed/ URL
+    // ── Tier 1 servers ──────────────────────────────
+    url.includes('vidsrc.to')         ||
+    url.includes('vidlink.pro')       ||
+    url.includes('videasy.net')       ||
+    url.includes('vidsrc.sbs')        ||
+    url.includes('vidsrc.mov')        ||
+    // ── Tier 2 servers ──────────────────────────────
+    url.includes('vidfast.pro')       ||
+    url.includes('multiembed.mov')    ||
+    url.includes('multiembed')        ||
+    url.includes('autoembed')         ||
+    url.includes('2embed.stream')     ||
+    url.includes('2embed.cc')         ||
+    url.includes('embed.su')          ||
+    // ── Legacy / extras kept for backward compat ────
+    url.includes('vidsrc.me')         ||
+    url.includes('vidsrc.cc')         ||
+    url.includes('vidsrc.icu')        ||
+    url.includes('vidsrc.xyz')        ||
+    url.includes('vidsrc.vip')        ||
+    url.includes('vidsrc.pro')        ||
+    url.includes('vidsrcme.su')       ||
+    url.includes('vidsrcme.ru')       ||
+    url.includes('vidsrc-me.su')      ||
+    url.includes('vsrc.su')           ||
+    url.includes('vsembed.su')        ||
+    url.includes('vsembed.ru')        ||
+    url.includes('vidsrc-embed.su')   ||
+    url.includes('vidsrc-embed.ru')   ||
+    url.includes('ezvidapi.com')      ||
+    url.includes('vidbinge.to')       ||
+    url.includes('embed-api.stream')  ||
+    url.includes('player.embed-api')  ||
+    url.includes('embedrise')         ||
+    url.includes('moviesapi')         ||
+    url.includes('godriveplayer')     ||
+    url.includes('vembed.click')      ||
+    url.includes('cinesrc.st')        ||
+    url.includes('v2.apimdb')
   ) return 'embed';
-
-  // ── HLS stream ──
-  if (url.endsWith('.m3u8') || url.includes('.m3u8?')) return 'hls';
-
-  // ── Direct video file ──
-  if (
-    url.endsWith('.mp4')  || url.includes('.mp4?')  ||
-    url.endsWith('.webm') || url.includes('.webm?') ||
-    url.endsWith('.mkv')  ||
-    url.includes('archive.org')
-  ) return 'mp4';
-
-  // Default — try as embed iframe (safer than crashing native player)
+  if (url.includes('archive.org') || url.match(/\.(mp4|webm|ogg)$/i)) return 'direct';
   return 'embed';
 }
 
 function getProviderName(url) {
-  if (url.includes('vidsrc.to'))    return 'VidSrc';
-  if (url.includes('vidsrc.me'))    return 'VidSrc';
-  if (url.includes('streamtape'))   return 'Streamtape';
-  if (url.includes('dood'))         return 'Doodstream';
-  if (url.includes('filemoon'))     return 'Filemoon';
-  if (url.includes('mixdrop'))      return 'Mixdrop';
-  if (url.includes('mp4upload'))    return 'MP4Upload';
-  if (url.includes('archive.org'))  return 'Internet Archive';
-  return 'External';
+  if (!url) return 'Player';
+  // Tier 1
+  if (url.includes('vidsrc.to'))      return 'VidSrc';
+  if (url.includes('vidlink.pro'))    return 'VidLink';
+  if (url.includes('videasy.net'))    return 'Videasy';
+  if (url.includes('vidsrc.sbs'))     return 'VidSrc SBS';
+  if (url.includes('vidsrc.mov'))     return 'VidSrc MOV';
+  // Tier 2
+  if (url.includes('vidfast.pro'))    return 'VidFast';
+  if (url.includes('multiembed'))     return 'SuperEmbed';
+  if (url.includes('autoembed'))      return 'AutoEmbed';
+  if (url.includes('2embed'))         return '2Embed';
+  if (url.includes('embed.su'))       return 'Embed.su';
+  // Legacy
+  if (url.includes('vidsrc.me'))      return 'VidSrc';
+  if (url.includes('vidsrc.cc'))      return 'VidSrc CC';
+  if (url.includes('vidsrc.icu'))     return 'VidSrc ICU';
+  if (url.includes('ezvidapi'))       return 'EzVid';
+  if (url.includes('vidbinge'))       return 'VidBinge';
+  if (url.includes('streamtape'))     return 'Streamtape';
+  if (url.includes('dood'))           return 'Doodstream';
+  if (url.includes('filemoon'))       return 'Filemoon';
+  if (url.includes('mixdrop'))        return 'Mixdrop';
+  if (url.includes('mp4upload'))      return 'MP4Upload';
+  if (url.includes('archive.org'))    return 'Internet Archive';
+  return 'Player';
 }
 
 export default function VideoPlayer({ streamUrl, streamSources = [], title, onProgress, startTime = 0 }) {
@@ -268,31 +283,42 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
 
     return (
       <>
-      <div ref={containerRef} className="relative w-full rounded-xl overflow-hidden bg-black group" style={{ aspectRatio: "16/9", minHeight: "200px", position: "relative" }}>
+      {/* 
+        Use a padding-bottom trick instead of aspect-video so the iframe
+        fills 100% of the space without cropping the embed player's own
+        timeline / fullscreen bar on any screen size.
+        padding-bottom: 56.25% = 16:9 ratio
+      */}
+      <div
+        ref={containerRef}
+        className="relative w-full rounded-xl overflow-hidden bg-black group"
+        style={{ paddingBottom: '56.25%', height: 0 }}
+      >
 
         {!iframeError ? (
           <>
-
-
             <iframe
               key={activeUrl}
               src={activeUrl}
-              className="w-full h-full border-0"
-              style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                border: 'none',
+              }}
               allowFullScreen
-              allow="autoplay; fullscreen; picture-in-picture; encrypted-media; scripts; same-origin"
-              webkitallowfullscreen="true"
-              mozallowfullscreen="true"
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
               referrerPolicy="no-referrer-when-downgrade"
               scrolling="no"
               title={title}
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-pointer-lock"
               onError={() => setIframeError(true)}
             />
 
-            {/* Top bar */}
-            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-              <div className="flex items-center gap-2">
+            {/* Top bar — gradient is pointer-events-none but buttons inside are auto */}
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 pointer-events-none">
+              <div className="flex items-center gap-2 pointer-events-none">
                 <span className="text-white text-xs bg-cinema-accent px-2 py-0.5 rounded font-medium">
                   {provider}
                 </span>
@@ -301,7 +327,7 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
                   🛡️ Ad Protection ON
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pointer-events-auto">
                 <SourceSelector />
                 <a href={activeUrl} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1 bg-black/60 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-lg transition-colors"
@@ -313,7 +339,7 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
           </>
         ) : (
           /* Iframe failed to load */
-          <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-cinema-dark">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-cinema-dark">
             <p className="text-5xl">📡</p>
             <p className="text-white font-semibold">Stream blocked by provider</p>
             <p className="text-cinema-muted text-sm text-center px-8">
@@ -333,15 +359,15 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
             </div>
           </div>
         )}
-      </div>
+      </div>{/* end padding-bottom wrapper */}
 
       {/* Server switcher — OUTSIDE the player, below it */}
       {streamSources.length > 1 && (
-        <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="flex flex-wrap gap-2 mt-3">
           {streamSources.map((s, i) => (
             <button key={i}
               onClick={() => { setSelectedSrc(s); setIframeError(false); }}
-              className={`text-xs px-4 py-2 rounded-xl font-medium transition-all border shrink-0 ${
+              className={`text-xs px-4 py-2 rounded-xl font-medium transition-all border ${
                 selectedSrc?.url === s.url
                   ? 'bg-cinema-accent border-cinema-accent text-white'
                   : 'bg-cinema-card border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white'
