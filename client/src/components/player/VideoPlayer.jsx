@@ -48,11 +48,7 @@ function getUrlType(url) {
     url.includes('moviesapi')        ||
     url.includes('embedrise')        ||
     url.includes('embedder')         ||
-    url.includes('/embed/')          ||
-    url.includes('vsembed.ru')        ||
-    url.includes('vsembed.su')        ||
-    url.includes('moviesapi.club')    ||
-    url.includes('111movies.com')
+    url.includes('/embed/')          // catch-all for any /embed/ URL
   ) return 'embed';
 
   // ── HLS stream ──
@@ -272,7 +268,7 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
 
     return (
       <>
-      <div ref={containerRef} className="relative w-full aspect-video rounded-xl overflow-hidden bg-black group">
+      <div ref={containerRef} className="relative w-full rounded-xl overflow-hidden bg-black group" style={{ aspectRatio: "16/9", minHeight: "200px", position: "relative" }}>
 
         {!iframeError ? (
           <>
@@ -282,10 +278,11 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
               key={activeUrl}
               src={activeUrl}
               className="w-full h-full border-0"
+              style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
               allowFullScreen
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media; scripts; same-origin"
               webkitallowfullscreen="true"
               mozallowfullscreen="true"
-              allow="autoplay; fullscreen; picture-in-picture; encrypted-media; scripts; same-origin"
               referrerPolicy="no-referrer-when-downgrade"
               scrolling="no"
               title={title}
@@ -353,7 +350,7 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
             </button>
           ))}
           <a href={activeUrl} target="_blank" rel="noopener noreferrer"
-            className="shrink-0 flex items-center gap-1 bg-cinema-card border border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white text-xs px-4 py-2 rounded-xl transition-colors">
+            className="ml-auto flex items-center gap-1 bg-cinema-card border border-cinema-border text-cinema-muted hover:border-cinema-accent hover:text-white text-xs px-4 py-2 rounded-xl transition-colors">
             <FiExternalLink size={12}/> Open
           </a>
         </div>
