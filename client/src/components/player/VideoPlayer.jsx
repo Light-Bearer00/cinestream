@@ -283,11 +283,11 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
 
     return (
       <>
-      {/* Responsive 16:9 iframe wrapper — overflow NOT hidden so embed player controls are never clipped */}
+      {/* Iframe wrapper — aspect-ratio 16/9, iframe fills 100% so embed controls are never clipped */}
       <div
         ref={containerRef}
         className="relative w-full bg-black group"
-        style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', height: 0, borderRadius: '0.75rem' }}
+        style={{ aspectRatio: '16/9', width: '100%', borderRadius: '0.75rem', overflow: 'hidden' }}
       >
 
         {!iframeError ? (
@@ -295,15 +295,13 @@ export default function VideoPlayer({ streamUrl, streamSources = [], title, onPr
             <iframe
               key={activeUrl}
               src={activeUrl}
+              width="100%"
+              height="100%"
               style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
+                display: 'block',
                 width: '100%',
                 height: '100%',
                 border: 'none',
-                display: 'block',
-                borderRadius: '0.75rem',
               }}
               allowFullScreen
               allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write"
