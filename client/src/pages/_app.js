@@ -4,12 +4,12 @@
  * - Every page except /auth/login is behind ProtectedRoute
  * - Registration page is removed — only the seeded admin account works
  */
-
 import '../styles/globals.css';
 import { useRouter } from 'next/router';
 import { AuthProvider } from '../context/AuthContext';
 import Layout from '../components/layout/Layout';
 import ProtectedRoute from '../components/ui/ProtectedRoute';
+import WelcomePopup from '../components/ui/WelcomePopup';
 
 // Only the login page is public — everything else requires login
 const PUBLIC_PATHS = ['/auth/login', '/auth/register'];
@@ -23,6 +23,7 @@ export default function App({ Component, pageProps }) {
 
   return (
     <AuthProvider>
+      <WelcomePopup />
       {isPublic ? (
         // Login page — no protection, no layout
         <Component {...pageProps} />
