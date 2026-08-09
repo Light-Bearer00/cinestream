@@ -43,6 +43,248 @@ async function fetchTrailerKey(movie) {
   } catch { return null; }
 }
 
+
+/* ─── Birthday Countdown / Celebration ─────────────────────────────────────── */
+function BirthdayCountdown() {
+  const [timeLeft, setTimeLeft] = useState({});
+  const [isBirthday, setIsBirthday] = useState(false);
+  const [showBdayPopup, setShowBdayPopup] = useState(false);
+
+  useEffect(() => {
+    function calculate() {
+      const now = new Date();
+      const thisYear = now.getFullYear();
+      // Sep 1 of this year
+      let birthday = new Date(thisYear, 8, 1, 0, 0, 0); // month is 0-indexed
+      // If Sep 1 already passed this year, target next year
+      if (now > new Date(thisYear, 8, 1, 23, 59, 59)) {
+        birthday = new Date(thisYear + 1, 8, 1, 0, 0, 0);
+      }
+
+      const isTodayBirthday =
+        now.getMonth() === 8 && now.getDate() === 1;
+
+      setIsBirthday(isTodayBirthday);
+
+      if (isTodayBirthday) {
+        // Check session so popup shows once per session on birthday
+        if (!sessionStorage.getItem('rq_bday_seen')) {
+          setShowBdayPopup(true);
+          sessionStorage.setItem('rq_bday_seen', '1');
+        }
+        return;
+      }
+
+      const diff = birthday - now;
+      const days    = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours   = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setTimeLeft({ days, hours, minutes, seconds });
+    }
+
+    calculate();
+    const id = setInterval(calculate, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ── Birthday popup (all day on Sep 1) ─────────────────────────────────────
+  if (showBdayPopup) {
+    return (
+      <>
+        {/* Confetti layer */}
+        <style>{`
+          @keyframes confetti-fall {
+            0%   { transform: translateY(-10px) rotate(0deg);   opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+          }
+          @keyframes bday-pulse {
+            0%, 100% { box-shadow: 0 0 30px 6px rgba(220,38,38,0.35); }
+            50%       { box-shadow: 0 0 60px 16px rgba(220,38,38,0.6); }
+          }
+          @keyframes float-up {
+            from { opacity: 0; transform: translateY(40px) scale(0.95); }
+            to   { opacity: 1; transform: translateY(0)    scale(1);    }
+          }
+          .confetti-piece {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -10px;
+            animation: confetti-fall linear infinite;
+            z-index: 9998;
+            border-radius: 2px;
+          }
+        `}</style>
+
+        {/* Confetti pieces */}
+        {[...Array(30)].map((_, i) => (
+          <div key={i} className="confetti-piece" style={{
+            left: `${Math.random() * 100}%`,
+            background: ['#dc2626','#f59e0b','#ec4899','#8b5cf6','#10b981','#fff'][i % 6],
+            width:  `${6 + Math.random() * 8}px`,
+            height: `${6 + Math.random() * 8}px`,
+            animationDuration: `${2 + Math.random() * 4}s`,
+            animationDelay:    `${Math.random() * 4}s`,
+          }} />
+        ))}
+
+        {/* Popup */}
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(8px)' }}>
+          <div style={{
+            background: 'linear-gradient(160deg, #1a1a1a, #111)',
+            border: '1px solid rgba(220,38,38,0.4)',
+            borderRadius: 24,
+            maxWidth: 420,
+            width: '100%',
+            animation: 'float-up 0.5s cubic-bezier(.22,.68,0,1.2) forwards',
+            animationName: 'bday-pulse, float-up',
+          }}>
+            {/* Top bar */}
+            <div style={{
+              height: 4, borderRadius: '24px 24px 0 0',
+              background: 'linear-gradient(90deg, #dc2626, #f59e0b, #ec4899, #dc2626)',
+              backgroundSize: '200% 100%',
+            }} />
+
+            <div className="px-8 py-8 text-center">
+              <div style={{ fontSize: 64, marginBottom: 12, lineHeight: 1 }}>
+                👑🎂👑
+              </div>
+              <h2 style={{
+                fontFamily: 'Bebas Neue, serif',
+                fontSize: 42,
+                letterSpacing: '0.06em',
+                color: '#fff',
+                lineHeight: 1,
+                marginBottom: 8,
+              }}>
+                Happy Birthday
+              </h2>
+              <h3 style={{
+                fontFamily: 'Bebas Neue, serif',
+                fontSize: 52,
+                letterSpacing: '0.04em',
+                background: 'linear-gradient(90deg, #dc2626, #f59e0b)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                lineHeight: 1,
+                marginBottom: 20,
+              }}>
+                Hiba 👑
+              </h3>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 15, lineHeight: 1.8, marginBottom: 28 }}>
+                On this special day, I want you to know you are
+                the most precious person in my world. Wishing you
+                all the happiness, love, and joy you deserve.
+                <br /><br />
+                You will always be my Queen 👑✨
+              </p>
+              <button
+                onClick={() => setShowBdayPopup(false)}
+                style={{
+                  background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 14,
+                  padding: '12px 36px',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  width: '100%',
+                  boxShadow: '0 0 24px rgba(220,38,38,0.4)',
+                }}>
+                Thank You 💛
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // ── Countdown banner (every day until Sep 1) ───────────────────────────────
+  if (isBirthday) return null; // popup already handled above
+
+  const units = [
+    { label: 'Days',    value: timeLeft.days },
+    { label: 'Hours',   value: timeLeft.hours },
+    { label: 'Minutes', value: timeLeft.minutes },
+    { label: 'Seconds', value: timeLeft.seconds },
+  ];
+
+  return (
+    <>
+      <style>{`
+        @keyframes countdown-glow {
+          0%, 100% { box-shadow: 0 0 12px 2px rgba(220,38,38,0.2); }
+          50%       { box-shadow: 0 0 22px 4px rgba(220,38,38,0.35); }
+        }
+        @keyframes tick {
+          0%  { transform: scale(1.12); }
+          100%{ transform: scale(1); }
+        }
+        .cd-number { animation: tick 1s ease-out; }
+      `}</style>
+      <div style={{
+        background: 'linear-gradient(135deg, #111 0%, #1a0a0a 100%)',
+        border: '1px solid rgba(220,38,38,0.2)',
+        borderRadius: 16,
+        padding: '18px 24px',
+        margin: '0 16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 16,
+        animation: 'countdown-glow 3s ease-in-out infinite',
+      }}>
+        {/* Left label */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 24 }}>👑</span>
+          <div>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>
+              Something special is coming
+            </p>
+            <p style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
+              A very important day
+            </p>
+          </div>
+        </div>
+
+        {/* Timer units */}
+        <div style={{ display: 'flex', gap: 10 }}>
+          {units.map(u => (
+            <div key={u.label} style={{ textAlign: 'center', minWidth: 52 }}>
+              <div className="cd-number" key={u.value} style={{
+                background: 'rgba(220,38,38,0.12)',
+                border: '1px solid rgba(220,38,38,0.25)',
+                borderRadius: 10,
+                padding: '8px 10px',
+                marginBottom: 4,
+              }}>
+                <span style={{
+                  color: '#fff',
+                  fontSize: 22,
+                  fontWeight: 700,
+                  fontFamily: 'monospace',
+                  lineHeight: 1,
+                }}>
+                  {String(u.value ?? 0).padStart(2, '0')}
+                </span>
+              </div>
+              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {u.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function HeroCarousel({ movies }) {
   const [current, setCurrent] = useState(0);
   const [trailerKeys, setTrailerKeys] = useState({});
@@ -248,6 +490,9 @@ export default function HomePage() {
         <meta name="description" content="Stream thousands of movies and TV shows on RoyalQueen." />
       </Head>
       <HeroCarousel movies={heroMovies} />
+      <div className="px-0 sm:px-0 mt-4 mb-2">
+        <BirthdayCountdown />
+      </div>
       <div className="space-y-8 pb-16 relative z-10 -mt-4">
         <ContinueWatchingRow />
         <RecommendationsRow />
