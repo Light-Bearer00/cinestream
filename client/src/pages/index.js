@@ -44,6 +44,239 @@ async function fetchTrailerKey(movie) {
 }
 
 
+
+/* ─── Name Change Announcement Popup ────────────────────────────────────────── */
+function AnnouncementPopup() {
+  const [visible, setVisible]     = useState(false);
+  const [closing, setClosing]     = useState(false);
+  const [countdown, setCountdown] = useState(5);
+  const [canClose, setCanClose]   = useState(false);
+
+  useEffect(() => {
+    const SESSION_KEY = 'rq_announcement_seen';
+    const EXPIRY_KEY  = 'rq_announcement_expiry';
+
+    // Set expiry date = 1 week from first visit
+    if (!localStorage.getItem(EXPIRY_KEY)) {
+      const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+      localStorage.setItem(EXPIRY_KEY, expiry.toString());
+    }
+
+    const expiry = parseInt(localStorage.getItem(EXPIRY_KEY));
+    const expired = Date.now() > expiry;
+
+    // Don't show if week is over OR already seen this session
+    if (expired || sessionStorage.getItem(SESSION_KEY)) return;
+
+    // Show after short delay
+    const t = setTimeout(() => {
+      setVisible(true);
+      sessionStorage.setItem(SESSION_KEY, '1');
+    }, 800);
+    return () => clearTimeout(t);
+  }, []);
+
+  // 5 second countdown before close button activates
+  useEffect(() => {
+    if (!visible) return;
+    if (countdown === 0) { setCanClose(true); return; }
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [visible, countdown]);
+
+  function handleClose() {
+    if (!canClose) return;
+    setClosing(true);
+    setTimeout(() => setVisible(false), 400);
+  }
+
+  if (!visible) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[9998] flex items-center justify-center p-4"
+      style={{
+        background: 'rgba(0,0,0,0.82)',
+        backdropFilter: 'blur(7px)',
+        animation: closing ? 'ann-fade-out 0.4s ease forwards' : 'ann-fade-in 0.4s ease forwards',
+      }}
+    >
+      <style>{`
+        @keyframes ann-fade-in  { from { opacity:0 } to { opacity:1 } }
+        @keyframes ann-fade-out { from { opacity:1 } to { opacity:0 } }
+        @keyframes ann-slide-up {
+          from { opacity:0; transform: translateY(30px) scale(0.96); }
+          to   { opacity:1; transform: translateY(0)    scale(1);    }
+        }
+        @keyframes ann-shimmer {
+          0%   { background-position: -200% center; }
+          100% { background-position:  200% center; }
+        }
+        @keyframes ann-glow {
+          0%, 100% { box-shadow: 0 0 24px 4px rgba(220,38,38,0.25); }
+          50%       { box-shadow: 0 0 48px 10px rgba(220,38,38,0.45); }
+        }
+        @keyframes ann-ring {
+          0%   { transform: scale(1);    opacity: 0.6; }
+          100% { transform: scale(1.8);  opacity: 0;   }
+        }
+        .ann-card {
+          animation: ann-slide-up 0.5s cubic-bezier(.22,.68,0,1.2) forwards, ann-glow 3s ease-in-out infinite;
+        }
+        .ann-title-shimmer {
+          background: linear-gradient(90deg, #fff 0%, #dc2626 40%, #f59e0b 60%, #fff 100%);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: ann-shimmer 3s linear infinite;
+        }
+        .ann-ring {
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          border: 2px solid rgba(220,38,38,0.5);
+          animation: ann-ring 1.8s ease-out infinite;
+        }
+      `}</style>
+
+      <div
+        className="ann-card relative w-full max-w-md rounded-2xl overflow-hidden"
+        style={{
+          background: 'linear-gradient(160deg, #1c1c1c 0%, #111 100%)',
+          border: '1px solid rgba(220,38,38,0.35)',
+        }}
+      >
+        {/* Top gradient bar */}
+        <div style={{
+          height: 4,
+          background: 'linear-gradient(90deg, #dc2626, #f59e0b, #ec4899, #dc2626)',
+          backgroundSize: '200% 100%',
+          animation: 'ann-shimmer 3s linear infinite',
+        }} />
+
+        <div className="px-7 py-7">
+          {/* Icon with rings */}
+          <div className="flex justify-center mb-5">
+            <div style={{ position: 'relative', width: 64, height: 64 }}>
+              <div className="ann-ring" />
+              <div className="ann-ring" style={{ animationDelay: '0.6s' }} />
+              <div style={{
+                width: 64, height: 64, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #dc2626, #991b1b)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 28, position: 'relative', zIndex: 1,
+              }}>👑</div>
+            </div>
+          </div>
+
+          {/* Announcement badge */}
+          <div className="flex justify-center mb-4">
+            <span style={{
+              background: 'rgba(220,38,38,0.15)',
+              border: '1px solid rgba(220,38,38,0.3)',
+              color: '#dc2626',
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              padding: '4px 14px',
+              borderRadius: 99,
+            }}>📢 Announcement</span>
+          </div>
+
+          {/* Main message */}
+          <div className="text-center mb-5">
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginBottom: 16, lineHeight: 1.6 }}>
+              We have some exciting news to share with you
+            </p>
+
+            {/* Old name → New name */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 20 }}>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Was</p>
+                <p style={{
+                  color: 'rgba(255,255,255,0.4)',
+                  fontSize: 18,
+                  fontWeight: 700,
+                  fontFamily: 'Bebas Neue, serif',
+                  letterSpacing: '0.05em',
+                  textDecoration: 'line-through',
+                  textDecorationColor: 'rgba(220,38,38,0.5)',
+                }}>RoyalQueen</p>
+              </div>
+              <div style={{ fontSize: 22 }}>→</div>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Now</p>
+                <p className="ann-title-shimmer" style={{
+                  fontSize: 24,
+                  fontWeight: 700,
+                  fontFamily: 'Bebas Neue, serif',
+                  letterSpacing: '0.05em',
+                }}>ForeverQueen</p>
+              </div>
+            </div>
+
+            {/* Reason */}
+            <div style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 12,
+              padding: '14px 16px',
+            }}>
+              <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, lineHeight: 1.8 }}>
+                Because no matter what happens,{' '}
+                <span style={{ color: '#f59e0b', fontWeight: 600 }}>you will always be my Queen 👑</span>
+                {' '}— and some things are simply{' '}
+                <span style={{ color: '#dc2626', fontWeight: 600 }}>forever</span>.
+              </p>
+            </div>
+          </div>
+
+          {/* Close button with countdown */}
+          <button
+            onClick={handleClose}
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: 14,
+              border: 'none',
+              cursor: canClose ? 'pointer' : 'not-allowed',
+              background: canClose
+                ? 'linear-gradient(135deg, #dc2626, #b91c1c)'
+                : 'rgba(255,255,255,0.07)',
+              color: canClose ? '#fff' : 'rgba(255,255,255,0.3)',
+              fontWeight: 600,
+              fontSize: 14,
+              transition: 'all 0.3s ease',
+              boxShadow: canClose ? '0 0 20px rgba(220,38,38,0.35)' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+            }}
+          >
+            {canClose ? (
+              <>Got it! 💛</>
+            ) : (
+              <>
+                <span style={{
+                  width: 22, height: 22, borderRadius: '50%',
+                  border: '2px solid rgba(255,255,255,0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)',
+                }}>
+                  {countdown}
+                </span>
+                Please read this first...
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Birthday Countdown / Celebration ─────────────────────────────────────── */
 function BirthdayCountdown() {
   const [timeLeft, setTimeLeft] = useState({});
@@ -489,6 +722,7 @@ export default function HomePage() {
         <title>ForeverQueen — Watch Movies & TV Shows</title>
         <meta name="description" content="Stream thousands of movies and TV shows on ForeverQueen." />
       </Head>
+      <AnnouncementPopup />
       <HeroCarousel movies={heroMovies} />
       <div className="px-0 sm:px-0 mt-4 mb-2">
         <BirthdayCountdown />
