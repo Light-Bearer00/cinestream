@@ -136,7 +136,7 @@ export default function MoviePage() {
   return (
     <>
       <Head>
-        <title>{movie.title} — RoyalQueen</title>
+        <title>{movie.title} — ForeverQueen</title>
         <meta name="description" content={movie.description} />
       </Head>
 

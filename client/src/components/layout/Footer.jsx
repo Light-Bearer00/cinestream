@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { MdLocalMovies } from 'react-icons/md';
-
 export default function Footer() {
   return (
     <footer className="bg-cinema-dark border-t border-cinema-border mt-16 py-10">
@@ -12,7 +11,7 @@ export default function Footer() {
               className="text-xl text-white"
               style={{ fontFamily: 'Bebas Neue, serif', letterSpacing: '0.15em' }}
             >
-              CINESTREAM
+              FOREVER QUEEN
             </span>
           </div>
           <p className="text-cinema-muted text-sm text-center">

@@ -131,7 +131,7 @@ export default function TVShowPage() {
 
   return (
     <>
-      <Head><title>{show.title} — RoyalQueen</title></Head>
+      <Head><title>{show.title} — ForeverQueen</title></Head>
 
       {/* Backdrop */}
       <div className="relative h-[45vh] min-h-72 overflow-hidden">

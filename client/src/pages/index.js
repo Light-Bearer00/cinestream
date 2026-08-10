@@ -467,7 +467,7 @@ export default function HomePage() {
   if (loading) {
     return (
       <>
-        <Head><title>RoyalQueen — Watch Movies & TV Shows</title></Head>
+        <Head><title>ForeverQueen — Watch Movies & TV Shows</title></Head>
         <div className="w-full h-[45vh] sm:h-[60vh] md:h-[70vh] shimmer" />
         <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mt-8 space-y-10">
           {[1,2,3,4].map(i => (
@@ -486,8 +486,8 @@ export default function HomePage() {
   return (
     <>
       <Head>
-        <title>RoyalQueen — Watch Movies & TV Shows</title>
-        <meta name="description" content="Stream thousands of movies and TV shows on RoyalQueen." />
+        <title>ForeverQueen — Watch Movies & TV Shows</title>
+        <meta name="description" content="Stream thousands of movies and TV shows on ForeverQueen." />
       </Head>
       <HeroCarousel movies={heroMovies} />
       <div className="px-0 sm:px-0 mt-4 mb-2">
@@ -501,7 +501,7 @@ export default function HomePage() {
         )}
         {top10.length >= 5 && (
           <div className="pt-6 pb-10">
-            <Top10Row title="Top 10 on RoyalQueen" movies={top10} />
+            <Top10Row title="Top 10 on ForeverQueen" movies={top10} />
           </div>
         )}
         {popular.length > 0 && (
