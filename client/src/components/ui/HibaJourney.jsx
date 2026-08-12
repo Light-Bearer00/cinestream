@@ -337,7 +337,7 @@ export default function HibaJourney() {
         <div style={{ height: 3, flexShrink: 0, background: 'linear-gradient(90deg, #dc2626, #f59e0b, #ec4899, #dc2626)', backgroundSize: '200%' }} />
         {phase === 'question' && (
           <div style={{ height: 2, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }}>
-            <div style={{ height: '100%', width: \`\${pct}%\`, background: 'rgba(220,38,38,0.7)', transition: 'width 0.6s ease' }} />
+            <div style={{ height: '100%', width: `${pct}%`, background: 'rgba(220,38,38,0.7)', transition: 'width 0.6s ease' }} />
           </div>
         )}
         <div style={{ padding: '28px 28px 24px', overflowY: 'auto', flex: 1 }}>
@@ -390,7 +390,7 @@ function OpeningPhase({ onDone, onStart, ready }) {
   );
 }
 function QuestionPhase({ q, onAnswer, onTypeDone, typeDone }) {
-  const fullText = q.sub ? \`\${q.question}\n\n\${q.sub}\` : q.question;
+  const fullText = q.sub ? `${q.question}\n\n${q.sub}` : q.question;
   const { displayed, done } = useTypewriter(fullText, 20, true);
   useEffect(() => { if (done) onTypeDone(); }, [done]);
   return (
