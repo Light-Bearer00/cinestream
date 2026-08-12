@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EmailJS Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+</head>
+<body>
+  <h2>EmailJS Test</h2>
+  <button onclick="sendTest()" style="padding:12px 24px; font-size:16px; cursor:pointer; background:#dc2626; color:white; border:none; border-radius:8px;">
+    Send Test Email
+  </button>
+  <pre id="log" style="margin-top:20px; padding:16px; background:#111; color:#0f0; border-radius:8px; font-size:13px;"></pre>
+
+  <script>
+    function log(msg) {
+      document.getElementById('log').textContent += msg + '\n';
+      console.log(msg);
+    }
+
+    async function sendTest() {
+      try {
+        log('Step 1: Initializing EmailJS...');
+        emailjs.init('eLvHaqcIVyH_J7t1S');
+        log('Step 2: Init done. Sending email...');
+
+        const result = await emailjs.send(
+          'service_zq466m5',
+          'template_68nkpz9',
+          {
+            subject:    'TEST - EmailJS is working',
+            message:    'Q1: How are you feeling?\n-> Hurt\n\nQ2: What hurt the most?\n-> Everything',
+            final:      'Test final answer',
+            timestamp:  new Date().toLocaleString(),
+            name:       'ForeverQueen Test',
+          }
+        );
+
+        log('Step 3: SUCCESS! Status: ' + result.status + ' - ' + result.text);
+        log('Check hackworld087@gmail.com now!');
+      } catch (err) {
+        log('ERROR: ' + JSON.stringify(err));
+        log('Status: ' + err.status);
+        log('Text: ' + err.text);
+      }
+    }
+  </script>
+</body>
+</html>

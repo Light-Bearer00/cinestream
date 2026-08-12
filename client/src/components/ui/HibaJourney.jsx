@@ -37,7 +37,7 @@ async function sendAnswersToOmar(answers, endingKey) {
 
     const result = await window.emailjs.send(
       'service_zq466m5',
-      'template_jrrnw9s',
+      'template_68nkpz9',
       templateParams
     );
     console.debug('sent:', result.status);
