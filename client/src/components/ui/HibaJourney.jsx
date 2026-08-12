@@ -300,7 +300,7 @@ export default function HibaJourney() {
       animation: closing ? 'hj-fade-out 0.4s ease forwards' : 'hj-fade-in 0.4s ease forwards',
     }}>
       <audio ref={audioRef} />
-      <style>{\`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes hj-fade-in  { from{opacity:0} to{opacity:1} }
         @keyframes hj-fade-out { from{opacity:1} to{opacity:0} }
         @keyframes hj-slide-up {
@@ -326,7 +326,7 @@ export default function HibaJourney() {
         .hj-text { white-space: pre-line; }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: rgba(220,38,38,0.3); border-radius: 99px; }
-      \`}</style>
+      ` }} />
       <div className="hj-card" style={{
         width: '100%', maxWidth: 500,
         background: 'linear-gradient(160deg, #1a1a1a 0%, #0f0f0f 100%)',
@@ -348,7 +348,7 @@ export default function HibaJourney() {
                 {phase === 'ending' ? 'Final message' : 'A message for Hiba'}
               </p>
               <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, margin: '3px 0 0' }}>
-                {phase === 'question' ? \`Question \${progress} of \${totalSteps}\` : phase === 'ending' ? 'From Omar, with love' : 'Please listen'}
+                {phase === 'question' ? `Question ${progress} of ${totalSteps}` : phase === 'ending' ? 'From Omar, with love' : 'Please listen'}
               </p>
             </div>
           </div>
@@ -439,10 +439,10 @@ function EndingPhase({ e, onClose }) {
       </div>
       <button onClick={canClose ? onClose : undefined} className="hj-continue" style={{
         width: '100%', padding: '13px', borderRadius: 14, border: 'none',
-        background: canClose ? \`linear-gradient(135deg, \${e.color}, \${e.color}cc)\` : 'rgba(255,255,255,0.05)',
+        background: canClose ? `linear-gradient(135deg, ${e.color}, ${e.color}cc)` : 'rgba(255,255,255,0.05)',
         color: canClose ? '#fff' : 'rgba(255,255,255,0.2)', fontSize: 14, fontWeight: 600,
         cursor: canClose ? 'pointer' : 'not-allowed',
-        boxShadow: canClose ? \`0 0 24px \${e.color}44\` : 'none',
+        boxShadow: canClose ? `0 0 24px ${e.color}44` : 'none',
       }}>
         {canClose ? 'Close 💛' : 'Reading...'}
       </button>
