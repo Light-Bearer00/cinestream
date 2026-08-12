@@ -8,7 +8,6 @@ import { useRouter } from 'next/router';
 import { AuthProvider } from '../context/AuthContext';
 import Layout from '../components/layout/Layout';
 import ProtectedRoute from '../components/ui/ProtectedRoute';
-import HibaJourney from '../components/ui/HibaJourney';
 
 const PUBLIC_PATHS = ['/auth/login', '/auth/register'];
 
@@ -19,7 +18,6 @@ export default function App({ Component, pageProps }) {
 
   return (
     <AuthProvider>
-      {!isPublic && <HibaJourney />}
       {isPublic ? (
         <Component {...pageProps} />
       ) : (
