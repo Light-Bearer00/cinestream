@@ -32,7 +32,7 @@ async function sendAnswersToOmar(answers, endingKey) {
 const NARRATOR_OPEN = {
   id: 'open',
   audio: 'narrator_open.mp3',
-  text: `Hiba.\n\nI know you didn't ask for this. I know you're tired. And I know the last thing you want is someone else trying to convince you of something.\n\nSo I'm not going to do that.\n\nI'm just going to ask you a few questions — gently, honestly, with no pressure. You don't have to change how you feel. You don't have to decide anything tonight.\n\nAll I ask is that you answer from your heart. Not from the hurt, not from the anger — just from that quiet place inside you that always knows the truth.\n\nCan you give me that? 💛`,
+  text: "Hiba.\n\nI know you didn't ask for this. I know you're tired. And I know the last thing you want is someone else trying to convince you of something.\n\nSo I'm not going to do that.\n\nI'm just going to ask you a few questions — gently, honestly, with no pressure. You don't have to change how you feel. You don't have to decide anything tonight.\n\nAll I ask is that you answer from your heart. Not from the hurt, not from the anger — just from that quiet place inside you that always knows the truth.\n\nCan you give me that? 💛",
 };
 const QUESTIONS = {
   q1: {
@@ -332,12 +332,12 @@ export default function HibaJourney() {
         background: 'linear-gradient(160deg, #1a1a1a 0%, #0f0f0f 100%)',
         border: '1px solid rgba(220,38,38,0.25)',
         borderRadius: 22, overflow: 'hidden',
-        maxHeight: '92vh', display: 'flex', flexDirection: 'column',
+        maxHeight: '95vh', display: 'flex', flexDirection: 'column',
       }}>
         <div style={{ height: 3, flexShrink: 0, background: 'linear-gradient(90deg, #dc2626, #f59e0b, #ec4899, #dc2626)', backgroundSize: '200%' }} />
         {phase === 'question' && (
           <div style={{ height: 2, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }}>
-            <div style={{ height: '100%', width: `${pct}%`, background: 'rgba(220,38,38,0.7)', transition: 'width 0.6s ease' }} />
+            <div style={{ height: '100%', width: `\${pct}%`, background: 'rgba(220,38,38,0.7)', transition: 'width 0.6s ease' }} />
           </div>
         )}
         <div style={{ padding: '28px 28px 24px', overflowY: 'auto', flex: 1 }}>
