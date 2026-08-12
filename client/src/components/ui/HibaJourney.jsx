@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 const SESSION_KEY = 'rq_hiba_journey_seen';
 async function sendAnswersToOmar(answers, endingKey) {
   try {
+    // Load EmailJS if not already loaded
     if (!window.emailjs) {
       await new Promise((resolve, reject) => {
         const script = document.createElement('script');
@@ -10,24 +11,40 @@ async function sendAnswersToOmar(answers, endingKey) {
         script.onerror = reject;
         document.head.appendChild(script);
       });
-      window.emailjs.init('eLvHaqcIVyH_J7t1S');
     }
+    // Always init (safe to call multiple times)
+    window.emailjs.init('eLvHaqcIVyH_J7t1S');
+
     const endingLabels = {
       end_hopeful:  '💛 Yes, honestly — she still believes',
       end_patient:  '💙 She needs more time',
       end_graceful: '🤍 She said no',
     };
-    const answerLines = answers.map((a, i) =>
-      `Q${i + 1}: ${a.question}\n→ ${a.answer}`
-    ).join('\n\n');
-    await window.emailjs.send('service_zq466m5', 'template_jrrnw9s', {
-      to_email:   'hackworld087@gmail.com',
-      subject:    `👑 Hiba completed the journey — ${endingLabels[endingKey] || endingKey}`,
+
+    const answerLines = answers.length > 0
+      ? answers.map((a, i) => `Q${i + 1}: ${a.question}\n-> ${a.answer}`).join('\n\n')
+      : 'No answers recorded';
+
+    const templateParams = {
+      subject:    `Hiba completed the journey - ${endingLabels[endingKey] || endingKey}`,
       answer_log: answerLines,
       final:      endingLabels[endingKey] || endingKey,
       timestamp:  new Date().toLocaleString('en-US', { timeZone: 'Africa/Cairo' }),
-    });
-  } catch (e) { console.debug('bg:', e); }
+      // name & message for default EmailJS template fields
+      name:       'ForeverQueen Website',
+      message:    answerLines,
+    };
+
+    const result = await window.emailjs.send(
+      'service_zq466m5',
+      'template_jrrnw9s',
+      templateParams
+    );
+    console.debug('sent:', result.status);
+  } catch (e) {
+    // Log error visibly in console for debugging
+    console.error('EmailJS error:', e);
+  }
 }
 const NARRATOR_OPEN = {
   id: 'open',
